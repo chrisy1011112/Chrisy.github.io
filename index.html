@@ -44,10 +44,20 @@
             flex-wrap: wrap;
             gap: 15px;
         }
+        .version-badge {
+            background: #e0e7ff;
+            color: #4338ca;
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+        }
         .templates-group, .actions-group {
             display: flex;
             gap: 8px;
             flex-wrap: wrap;
+            align-items: center;
         }
         .btn-preset {
             background: #f1f5f9;
@@ -324,10 +334,11 @@
 <body>
 
     <div class="wrapper">
-        <!-- Quick Templates & Utilities -->
+        <!-- Quick Templates & Version Bar -->
         <div class="top-bar">
             <div class="templates-group">
-                <span style="font-size: 0.85rem; font-weight: bold; align-self: center; color: var(--text-muted);">Presets:</span>
+                <span class="version-badge">v2.1.0-LIVE</span>
+                <span style="font-size: 0.85rem; font-weight: bold; color: var(--text-muted); margin-left: 5px;">Presets:</span>
                 <button class="btn-preset" onclick="loadPreset('welcome')">👋 Welcome</button>
                 <button class="btn-preset" onclick="loadPreset('alert')">🚨 Warning</button>
                 <button class="btn-preset" onclick="loadPreset('update')">🚀 Update</button>
@@ -711,11 +722,11 @@
                     { name: 'Estimated Time', value: '30 Minutes', inline: true }
                 ];
             } else if (type === 'update') {
-                document.getElementById('embedTitle').value = '🚀 Version 2.0 Released!';
-                document.getElementById('embedDescription').value = 'We have rolled out massive performance upgrades and brand-new features across the system.';
+                document.getElementById('embedTitle').value = '🚀 Version 2.1 Released!';
+                document.getElementById('embedDescription').value = 'We have rolled out version tracking badges and drag-and-drop field sorting!';
                 document.getElementById('embedColorHex').value = '#6366f1';
                 fields = [
-                    { name: '✨ Features', value: '- Live Previews\n- Drag & Drop Fields\n- Instant JSON sync', inline: false }
+                    { name: '✨ Features', value: '- Version Badge v2.1.0\n- Drag & Drop Sorting\n- Instant Live Preview', inline: false }
                 ];
             }
             syncColor('hex');
