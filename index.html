@@ -103,11 +103,6 @@
             padding: 12px;
             margin-bottom: 15px;
             background: #fafafa;
-            cursor: grab;
-            transition: border-color 0.2s, box-shadow 0.2s;
-        }
-        .draggable-section:active {
-            cursor: grabbing;
         }
         .section-header {
             font-weight: 700;
@@ -117,7 +112,6 @@
             display: flex;
             align-items: center;
             gap: 6px;
-            user-select: none;
         }
         label {
             display: block;
@@ -160,10 +154,6 @@
             padding: 10px;
             border-radius: 6px;
             margin-top: 8px;
-            cursor: grab;
-        }
-        .field-box:active {
-            cursor: grabbing;
         }
         .btn-action {
             background: var(--accent);
@@ -227,6 +217,27 @@
         }
         .chip:hover {
             background: #cbd5e1;
+        }
+
+        /* Modal Overlay */
+        .modal-overlay {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.5);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+        .modal-content {
+            background: white;
+            padding: 25px;
+            border-radius: 12px;
+            width: 90%;
+            max-width: 500px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.3);
+            max-height: 80vh;
+            overflow-y: auto;
         }
 
         /* Discord Preview Layout */
@@ -372,7 +383,7 @@
         <!-- Quick Templates & Version Bar -->
         <div class="top-bar">
             <div class="templates-group">
-                <span class="version-badge">v3.0.1-PRO</span>
+                <span class="version-badge">v3.1.0-PRO</span>
                 <span style="font-size: 0.85rem; font-weight: bold; color: var(--text-muted); margin-left: 5px;">Presets:</span>
                 <div id="templateButtonsContainer" style="display:inline-flex; gap:8px;"></div>
                 <button class="btn-preset" onclick="loadPreset('clear')">🧹 Clear</button>
@@ -380,7 +391,7 @@
             <div class="actions-group">
                 <button class="btn-secondary" onclick="exportJSON()">📋 Copy JSON</button>
                 <button class="btn-secondary" style="background-color: #0d9488;" onclick="testWebhookConnection()">🔌 Test Webhook</button>
-                <button class="btn-secondary" style="background-color: #7c3aed;" onclick="openChangelogModal()">📜 Changelog</button>
+                <button class="btn-secondary" style="background-color: #7c3aed;" onclick="openFeedbackModal()">📥 View Feedback Inbox</button>
             </div>
         </div>
 
@@ -530,6 +541,19 @@
         </div>
     </div>
 
+    <!-- Feedback Modal Popup -->
+    <div class="modal-overlay" id="feedbackModal">
+        <div class="modal-content">
+            <h2 style="margin-top:0;">📥 Feedback Inbox</h2>
+            <p style="font-size: 0.85rem; color: var(--text-muted);">Here are all feedback submissions stored in your browser:</p>
+            <div id="feedbackListContainer" style="display: flex; flex-direction: column; gap: 10px; margin-bottom: 15px; max-height: 250px; overflow-y: auto;"></div>
+            <div style="display: flex; gap: 10px;">
+                <button class="btn-danger" style="flex: 1;" onclick="clearFeedback()">Clear Inbox</button>
+                <button class="btn-secondary" style="flex: 1;" onclick="closeFeedbackModal()">Close</button>
+            </div>
+        </div>
+    </div>
+
     <script>
         let fields = [];
 
@@ -634,13 +658,47 @@
                 .catch(() => alert("Connection test complete or CORS restricted, try sending a test payload!"));
         }
 
-        function openChangelogModal() {
-            alert("📜 Changelog v3.0.1-PRO:\n\n- Removed external scripting modules\n- Added Local Storage autosave\n- Added Spoiler & Ping helper quick chips\n- Added QR Code generator integration\n- Added Webhook Connection tester tool\n- Added Feedback & Feature Request box");
+        // Feedback System Functions
+        function openFeedbackBox() {
+            const fb = prompt("What feature or feedback would you like to share?");
+            if (!fb || fb.trim() === "") return;
+            
+            let feedbackList = JSON.parse(localStorage.getItem('embed_studio_feedback') || '[]');
+            feedbackList.push({ text: fb, date: new Date().toLocaleString() });
+            localStorage.setItem('embed_studio_feedback', JSON.stringify(feedbackList));
+            alert("Thank you! Your feedback has been saved to your Inbox.");
         }
 
-        function openFeedbackBox() {
-            const fb = prompt("What feature or feedback would you like to share with the developers?");
-            if (fb) alert("Thank you! Your feedback has been noted.");
+        function openFeedbackModal() {
+            const container = document.getElementById('feedbackListContainer');
+            container.innerHTML = '';
+            let feedbackList = JSON.parse(localStorage.getItem('embed_studio_feedback') || '[]');
+            
+            if (feedbackList.length === 0) {
+                container.innerHTML = '<p style="color: var(--text-muted); text-align: center; margin: 20px 0;">No feedback submitted yet.</p>';
+            } else {
+                feedbackList.reverse().forEach((item, index) => {
+                    const box = document.createElement('div');
+                    box.style.background = '#f8fafc';
+                    box.style.border = '1px solid var(--border)';
+                    box.style.padding = '10px';
+                    box.style.borderRadius = '6px';
+                    box.innerHTML = `<div style="font-size: 0.75rem; color: var(--text-muted); margin-bottom: 4px;">${item.date}</div><div style="font-size: 0.85rem; color: var(--text-main);">${item.text}</div>`;
+                    container.appendChild(box);
+                });
+            }
+            document.getElementById('feedbackModal').style.display = 'flex';
+        }
+
+        function closeFeedbackModal() {
+            document.getElementById('feedbackModal').style.display = 'none';
+        }
+
+        function clearFeedback() {
+            if (confirm("Are you sure you want to clear all stored feedback?")) {
+                localStorage.removeItem('embed_studio_feedback');
+                openFeedbackModal();
+            }
         }
 
         function parseDiscordTags(text) {
