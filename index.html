@@ -141,7 +141,15 @@
             padding: 10px;
             border-radius: 6px;
             margin-top: 8px;
-            position: relative;
+            cursor: grab;
+            transition: border-color 0.2s, box-shadow 0.2s;
+        }
+        .field-box:active {
+            cursor: grabbing;
+        }
+        .field-box.dragging {
+            opacity: 0.4;
+            border: 2px dashed var(--accent);
         }
         .btn-action {
             background: var(--accent);
@@ -375,7 +383,7 @@
                 </fieldset>
 
                 <fieldset>
-                    <legend>Dynamic Fields (<span id="fieldCount">0</span>/25)</legend>
+                    <legend>Dynamic Fields (<span id="fieldCount">0</span>/25) - Drag to Reorder</legend>
                     <button class="btn-secondary" onclick="addField()" style="width: 100%; margin-bottom: 10px;">+ Add Field</button>
                     <div id="fieldsContainer"></div>
                 </fieldset>
@@ -439,6 +447,7 @@
 
     <script>
         let fields = [];
+        let draggedIndex = null;
 
         function syncColor(source) {
             const picker = document.getElementById('embedColorPicker');
@@ -477,10 +486,39 @@
             fields.forEach((field, index) => {
                 const box = document.createElement('div');
                 box.className = 'field-box';
+                box.draggable = true;
+                box.dataset.index = index;
+
+                // Drag and drop event listeners
+                box.addEventListener('dragstart', (e) => {
+                    draggedIndex = index;
+                    setTimeout(() => box.classList.add('dragging'), 0);
+                });
+
+                box.addEventListener('dragend', (e) => {
+                    box.classList.remove('dragging');
+                    draggedIndex = null;
+                });
+
+                box.addEventListener('dragover', (e) => {
+                    e.preventDefault();
+                });
+
+                box.addEventListener('drop', (e) => {
+                    e.preventDefault();
+                    if (draggedIndex !== null && draggedIndex !== index) {
+                        const movedField = fields.splice(draggedIndex, 1)[0];
+                        fields.splice(index, 0, movedField);
+                        renderFieldsForm();
+                        updatePreview();
+                    }
+                });
+
                 box.innerHTML = `
-                    <label>Field #${index + 1} Name:</label>
+                    <div style="font-size: 0.75rem; font-weight: bold; color: var(--accent); margin-bottom: 4px;">⠿ Field #${index + 1} (Drag to reorder)</div>
+                    <label>Name:</label>
                     <input type="text" value="${field.name}" oninput="fields[${index}].name = this.value; updatePreview()">
-                    <label>Field #${index + 1} Value:</label>
+                    <label>Value:</label>
                     <textarea oninput="fields[${index}].value = this.value; updatePreview()">${field.value}</textarea>
                     <label style="display: flex; align-items: center; gap: 6px; margin-top: 6px; cursor: pointer;">
                         <input type="checkbox" ${field.inline ? 'checked' : ''} onchange="fields[${index}].inline = this.checked; updatePreview()"> Inline Field
@@ -661,8 +699,8 @@
                 document.getElementById('embedColorHex').value = '#10b981';
                 document.getElementById('thumbnailURL').value = 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=150';
                 fields = [
-                    { name: '📜 Rules', value: 'Check out <#rules>', inline: true },
-                    { name: '💬 Chat', value: 'Say hello in <#general>', inline: true }
+                    { name: '📜 Rules', value: 'Check out rules channel', inline: true },
+                    { name: '💬 Chat', value: 'Say hello in general', inline: true }
                 ];
             } else if (type === 'alert') {
                 document.getElementById('embedTitle').value = '🚨 Maintenance Alert';
@@ -677,7 +715,7 @@
                 document.getElementById('embedDescription').value = 'We have rolled out massive performance upgrades and brand-new features across the system.';
                 document.getElementById('embedColorHex').value = '#6366f1';
                 fields = [
-                    { name: '✨ Features', value: '- Live Previews\n- Dynamic Fields\n- Instant JSON sync', inline: false }
+                    { name: '✨ Features', value: '- Live Previews\n- Drag & Drop Fields\n- Instant JSON sync', inline: false }
                 ];
             }
             syncColor('hex');
