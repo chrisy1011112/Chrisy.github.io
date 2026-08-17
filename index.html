@@ -97,18 +97,31 @@
             border-bottom: 2px solid var(--border);
             padding-bottom: 8px;
         }
-        fieldset {
+        .draggable-section {
             border: 1px solid var(--border);
             border-radius: 8px;
             padding: 12px;
             margin-bottom: 15px;
             background: #fafafa;
+            cursor: grab;
+            transition: border-color 0.2s, box-shadow 0.2s;
         }
-        legend {
+        .draggable-section:active {
+            cursor: grabbing;
+        }
+        .draggable-section.dragging {
+            opacity: 0.4;
+            border: 2px dashed var(--accent);
+        }
+        .section-header {
             font-weight: 700;
             color: var(--accent);
             font-size: 0.85rem;
-            padding: 0 6px;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            user-select: none;
         }
         label {
             display: block;
@@ -152,7 +165,6 @@
             border-radius: 6px;
             margin-top: 8px;
             cursor: grab;
-            transition: border-color 0.2s, box-shadow 0.2s;
         }
         .field-box:active {
             cursor: grabbing;
@@ -172,6 +184,7 @@
             cursor: pointer;
             transition: background 0.2s;
             width: 100%;
+            margin-top: 10px;
         }
         .btn-action:hover {
             background: var(--accent-hover);
@@ -337,7 +350,7 @@
         <!-- Quick Templates & Version Bar -->
         <div class="top-bar">
             <div class="templates-group">
-                <span class="version-badge">v2.1.0-LIVE</span>
+                <span class="version-badge">v2.2.0-LIVE</span>
                 <span style="font-size: 0.85rem; font-weight: bold; color: var(--text-muted); margin-left: 5px;">Presets:</span>
                 <button class="btn-preset" onclick="loadPreset('welcome')">👋 Welcome</button>
                 <button class="btn-preset" onclick="loadPreset('alert')">🚨 Warning</button>
@@ -353,60 +366,68 @@
             <!-- Form Configurator -->
             <div class="card">
                 <h2>Builder Controls ⚡</h2>
+                <p style="font-size: 0.78rem; color: var(--text-muted); margin-top: -10px; margin-bottom: 15px;">Tip: Drag any section header card below to reorder your workspace layout!</p>
                 
-                <fieldset>
-                    <legend>General Settings</legend>
-                    <label for="webhookURL">Webhook URL:</label>
-                    <input type="text" id="webhookURL" placeholder="https://discord.com/api/webhooks/...">
+                <div id="builderSectionsContainer">
+                    <!-- General Settings Section -->
+                    <div class="draggable-section" draggable="true" data-section="general">
+                        <div class="section-header">⠿ General Settings</div>
+                        <label for="webhookURL">Webhook URL:</label>
+                        <input type="text" id="webhookURL" placeholder="https://discord.com/api/webhooks/...">
 
-                    <label for="embedTitle">Title:</label>
-                    <input type="text" id="embedTitle" placeholder="Embed title..." oninput="updatePreview()">
+                        <label for="embedTitle">Title:</label>
+                        <input type="text" id="embedTitle" placeholder="Embed title..." oninput="updatePreview()">
 
-                    <label for="embedURL">Title Hyperlink URL:</label>
-                    <input type="text" id="embedURL" placeholder="https://example.com" oninput="updatePreview()">
+                        <label for="embedURL">Title Hyperlink URL:</label>
+                        <input type="text" id="embedURL" placeholder="https://example.com" oninput="updatePreview()">
 
-                    <label for="embedDescription">Description (Supports Markdown):</label>
-                    <textarea id="embedDescription" placeholder="Main description..." oninput="updatePreview()"></textarea>
+                        <label for="embedDescription">Description (Supports Markdown):</label>
+                        <textarea id="embedDescription" placeholder="Main description..." oninput="updatePreview()"></textarea>
 
-                    <label>Sidebar Color:</label>
-                    <div class="color-row">
-                        <input type="color" id="embedColorPicker" value="#5865F2" oninput="syncColor('picker')">
-                        <input type="text" id="embedColorHex" value="#5865F2" oninput="syncColor('hex')">
+                        <label>Sidebar Color:</label>
+                        <div class="color-row">
+                            <input type="color" id="embedColorPicker" value="#5865F2" oninput="syncColor('picker')">
+                            <input type="text" id="embedColorHex" value="#5865F2" oninput="syncColor('hex')">
+                        </div>
                     </div>
-                </fieldset>
 
-                <fieldset>
-                    <legend>Author Information</legend>
-                    <label for="authorName">Author Name:</label>
-                    <input type="text" id="authorName" placeholder="Author name..." oninput="updatePreview()">
+                    <!-- Author Section -->
+                    <div class="draggable-section" draggable="true" data-section="author">
+                        <div class="section-header">⠿ Author Information</div>
+                        <label for="authorName">Author Name:</label>
+                        <input type="text" id="authorName" placeholder="Author name..." oninput="updatePreview()">
 
-                    <label for="authorIcon">Author Icon URL:</label>
-                    <input type="text" id="authorIcon" placeholder="https://.../icon.png" oninput="updatePreview()">
-                </fieldset>
+                        <label for="authorIcon">Author Icon URL:</label>
+                        <input type="text" id="authorIcon" placeholder="https://.../icon.png" oninput="updatePreview()">
+                    </div>
 
-                <fieldset>
-                    <legend>Images & Thumbnails</legend>
-                    <label for="thumbnailURL">Thumbnail URL (Top-Right):</label>
-                    <input type="text" id="thumbnailURL" placeholder="https://.../thumb.png" oninput="updatePreview()">
+                    <!-- Images Section -->
+                    <div class="draggable-section" draggable="true" data-section="images">
+                        <div class="section-header">⠿ Images & Thumbnails</div>
+                        <label for="thumbnailURL">Thumbnail URL (Top-Right):</label>
+                        <input type="text" id="thumbnailURL" placeholder="https://.../thumb.png" oninput="updatePreview()">
 
-                    <label for="imageURL">Main Image URL (Bottom Banner):</label>
-                    <input type="text" id="imageURL" placeholder="https://.../banner.png" oninput="updatePreview()">
-                </fieldset>
+                        <label for="imageURL">Main Image URL (Bottom Banner):</label>
+                        <input type="text" id="imageURL" placeholder="https://.../banner.png" oninput="updatePreview()">
+                    </div>
 
-                <fieldset>
-                    <legend>Dynamic Fields (<span id="fieldCount">0</span>/25) - Drag to Reorder</legend>
-                    <button class="btn-secondary" onclick="addField()" style="width: 100%; margin-bottom: 10px;">+ Add Field</button>
-                    <div id="fieldsContainer"></div>
-                </fieldset>
+                    <!-- Dynamic Fields Section -->
+                    <div class="draggable-section" draggable="true" data-section="fields">
+                        <div class="section-header">⠿ Dynamic Fields (<span id="fieldCount">0</span>/25)</div>
+                        <button class="btn-secondary" onclick="addField()" style="width: 100%; margin-bottom: 10px;">+ Add Field</button>
+                        <div id="fieldsContainer"></div>
+                    </div>
 
-                <fieldset>
-                    <legend>Footer & Timestamp</legend>
-                    <label for="footerText">Footer Text:</label>
-                    <input type="text" id="footerText" placeholder="Footer text..." oninput="updatePreview()">
+                    <!-- Footer Section -->
+                    <div class="draggable-section" draggable="true" data-section="footer">
+                        <div class="section-header">⠿ Footer & Timestamp</div>
+                        <label for="footerText">Footer Text:</label>
+                        <input type="text" id="footerText" placeholder="Footer text..." oninput="updatePreview()">
 
-                    <label for="footerIcon">Footer Icon URL:</label>
-                    <input type="text" id="footerIcon" placeholder="https://.../footer-icon.png" oninput="updatePreview()">
-                </fieldset>
+                        <label for="footerIcon">Footer Icon URL:</label>
+                        <input type="text" id="footerIcon" placeholder="https://.../footer-icon.png" oninput="updatePreview()">
+                    </div>
+                </div>
 
                 <button class="btn-action" onclick="sendToDiscord()">🚀 Send Embed to Discord</button>
             </div>
@@ -459,6 +480,42 @@
     <script>
         let fields = [];
         let draggedIndex = null;
+        let draggedSection = null;
+
+        // Setup Global Section Drag & Drop Reordering
+        const sectionsContainer = document.getElementById('builderSectionsContainer');
+        const sectionElements = sectionsContainer.querySelectorAll('.draggable-section');
+
+        sectionElements.forEach(section => {
+            section.addEventListener('dragstart', (e) => {
+                draggedSection = section;
+                setTimeout(() => section.classList.add('dragging'), 0);
+            });
+
+            section.addEventListener('dragend', (e) => {
+                section.classList.remove('dragging');
+                draggedSection = null;
+            });
+
+            section.addEventListener('dragover', (e) => {
+                e.preventDefault();
+            });
+
+            section.addEventListener('drop', (e) => {
+                e.preventDefault();
+                if (draggedSection && draggedSection !== section) {
+                    const allSections = [...sectionsContainer.querySelectorAll('.draggable-section')];
+                    const draggedPos = allSections.indexOf(draggedSection);
+                    const targetPos = allSections.indexOf(section);
+
+                    if (draggedPos < targetPos) {
+                        sectionsContainer.insertBefore(draggedSection, section.nextSibling);
+                    } else {
+                        sectionsContainer.insertBefore(draggedSection, section);
+                    }
+                }
+            });
+        });
 
         function syncColor(source) {
             const picker = document.getElementById('embedColorPicker');
@@ -500,8 +557,8 @@
                 box.draggable = true;
                 box.dataset.index = index;
 
-                // Drag and drop event listeners
                 box.addEventListener('dragstart', (e) => {
+                    e.stopPropagation(); // prevent section dragging conflict
                     draggedIndex = index;
                     setTimeout(() => box.classList.add('dragging'), 0);
                 });
@@ -517,6 +574,7 @@
 
                 box.addEventListener('drop', (e) => {
                     e.preventDefault();
+                    e.stopPropagation();
                     if (draggedIndex !== null && draggedIndex !== index) {
                         const movedField = fields.splice(draggedIndex, 1)[0];
                         fields.splice(index, 0, movedField);
@@ -526,7 +584,7 @@
                 });
 
                 box.innerHTML = `
-                    <div style="font-size: 0.75rem; font-weight: bold; color: var(--accent); margin-bottom: 4px;">⠿ Field #${index + 1} (Drag to reorder)</div>
+                    <div style="font-size: 0.75rem; font-weight: bold; color: var(--accent); margin-bottom: 4px;">⠿ Field #${index + 1}</div>
                     <label>Name:</label>
                     <input type="text" value="${field.name}" oninput="fields[${index}].name = this.value; updatePreview()">
                     <label>Value:</label>
@@ -722,11 +780,11 @@
                     { name: 'Estimated Time', value: '30 Minutes', inline: true }
                 ];
             } else if (type === 'update') {
-                document.getElementById('embedTitle').value = '🚀 Version 2.1 Released!';
-                document.getElementById('embedDescription').value = 'We have rolled out version tracking badges and drag-and-drop field sorting!';
+                document.getElementById('embedTitle').value = '🚀 Version 2.2 Released!';
+                document.getElementById('embedDescription').value = 'You can now drag and drop entire configuration sections to completely customize your workspace layout!';
                 document.getElementById('embedColorHex').value = '#6366f1';
                 fields = [
-                    { name: '✨ Features', value: '- Version Badge v2.1.0\n- Drag & Drop Sorting\n- Instant Live Preview', inline: false }
+                    { name: '✨ Features', value: '- v2.2.0 Global Drag & Drop\n- Reorder Section Panels\n- Live Real-time Sync', inline: false }
                 ];
             }
             syncColor('hex');
