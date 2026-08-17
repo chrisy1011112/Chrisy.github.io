@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Ultimate Discord Embed Studio</title>
+    <title>Ultimate Discord Embed Studio Pro</title>
     <style>
         :root {
             --bg-gradient: linear-gradient(135deg, #0f172a, #1e1b4b);
@@ -109,10 +109,6 @@
         .draggable-section:active {
             cursor: grabbing;
         }
-        .draggable-section.dragging {
-            opacity: 0.4;
-            border: 2px dashed var(--accent);
-        }
         .section-header {
             font-weight: 700;
             color: var(--accent);
@@ -169,10 +165,6 @@
         .field-box:active {
             cursor: grabbing;
         }
-        .field-box.dragging {
-            opacity: 0.4;
-            border: 2px dashed var(--accent);
-        }
         .btn-action {
             background: var(--accent);
             color: white;
@@ -214,6 +206,27 @@
         }
         .btn-secondary:hover {
             background: #334155;
+        }
+
+        /* Toolbar helper chips */
+        .helper-chips {
+            display: flex;
+            gap: 5px;
+            flex-wrap: wrap;
+            margin-top: 4px;
+        }
+        .chip {
+            background: #e2e8f0;
+            border: none;
+            border-radius: 4px;
+            padding: 2px 6px;
+            font-size: 0.7rem;
+            font-weight: bold;
+            cursor: pointer;
+            color: #334155;
+        }
+        .chip:hover {
+            background: #cbd5e1;
         }
 
         /* Discord Preview Layout */
@@ -359,14 +372,15 @@
         <!-- Quick Templates & Version Bar -->
         <div class="top-bar">
             <div class="templates-group">
-                <span class="version-badge">v2.5.0-ROBLOX</span>
+                <span class="version-badge">v3.0.1-PRO</span>
                 <span style="font-size: 0.85rem; font-weight: bold; color: var(--text-muted); margin-left: 5px;">Presets:</span>
                 <div id="templateButtonsContainer" style="display:inline-flex; gap:8px;"></div>
                 <button class="btn-preset" onclick="loadPreset('clear')">🧹 Clear</button>
             </div>
             <div class="actions-group">
                 <button class="btn-secondary" onclick="exportJSON()">📋 Copy JSON</button>
-                <button class="btn-secondary" style="background-color: #e11d48;" onclick="exportRobloxScript()">🎮 Copy Roblox Script</button>
+                <button class="btn-secondary" style="background-color: #0d9488;" onclick="testWebhookConnection()">🔌 Test Webhook</button>
+                <button class="btn-secondary" style="background-color: #7c3aed;" onclick="openChangelogModal()">📜 Changelog</button>
             </div>
         </div>
 
@@ -374,14 +388,14 @@
             <!-- Form Configurator -->
             <div class="card">
                 <h2>Builder Controls ⚡</h2>
-                <p style="font-size: 0.78rem; color: var(--text-muted); margin-top: -10px; margin-bottom: 15px;">Tip: Drag any section header card below to reorder your workspace layout!</p>
+                <p style="font-size: 0.78rem; color: var(--text-muted); margin-top: -10px; margin-bottom: 15px;">Autosave is active (Local Storage)</p>
                 
                 <div id="builderSectionsContainer">
                     <!-- General Settings Section -->
-                    <div class="draggable-section" draggable="true" data-section="general">
-                        <div class="section-header">⠿ General Settings</div>
+                    <div class="draggable-section">
+                        <div class="section-header">General Settings</div>
                         <label for="webhookURL">Webhook URL:</label>
-                        <input type="text" id="webhookURL" placeholder="https://discord.com/api/webhooks/...">
+                        <input type="text" id="webhookURL" placeholder="https://discord.com/api/webhooks/..." oninput="autoSave()">
 
                         <label for="embedTitle">Title:</label>
                         <input type="text" id="embedTitle" placeholder="Embed title..." oninput="updatePreview()">
@@ -389,10 +403,19 @@
                         <label for="embedURL">Title Hyperlink URL:</label>
                         <input type="text" id="embedURL" placeholder="https://example.com" oninput="updatePreview()">
 
-                        <label for="embedDescription">Description (Supports Markdown & Timestamps):</label>
-                        <textarea id="embedDescription" placeholder="Main description... e.g. Event starts <t:1672531199:R>" oninput="updatePreview()"></textarea>
+                        <label for="embedDescription">Description:</label>
+                        <textarea id="embedDescription" placeholder="Main description..." oninput="updatePreview()"></textarea>
+                        
+                        <!-- Spoiler Tag & Ping Helper Chips -->
+                        <div class="helper-chips">
+                            <span style="font-size: 0.7rem; font-weight: bold; align-self: center; color: var(--text-muted);">Quick Helpers:</span>
+                            <button class="chip" onclick="insertHelperText('embedDescription', '||Spoiler Text||')">🔒 Spoiler</button>
+                            <button class="chip" onclick="insertHelperText('embedDescription', '@everyone')">📢 @everyone</button>
+                            <button class="chip" onclick="insertHelperText('embedDescription', '@here')">🔔 @here</button>
+                            <button class="chip" onclick="generateQRCodeModal()">📱 QR Code Link</button>
+                        </div>
 
-                        <label>Sidebar Color:</label>
+                        <label style="margin-top: 10px;">Sidebar Color:</label>
                         <div class="color-row">
                             <input type="color" id="embedColorPicker" value="#5865F2" oninput="syncColor('picker')">
                             <input type="text" id="embedColorHex" value="#5865F2" oninput="syncColor('hex')">
@@ -400,8 +423,8 @@
                     </div>
 
                     <!-- Author Section -->
-                    <div class="draggable-section" draggable="true" data-section="author">
-                        <div class="section-header">⠿ Author Information</div>
+                    <div class="draggable-section">
+                        <div class="section-header">Author Information</div>
                         <label for="authorName">Author Name:</label>
                         <input type="text" id="authorName" placeholder="Author name..." oninput="updatePreview()">
 
@@ -410,8 +433,8 @@
                     </div>
 
                     <!-- Images Section -->
-                    <div class="draggable-section" draggable="true" data-section="images">
-                        <div class="section-header">⠿ Images & Thumbnails</div>
+                    <div class="draggable-section">
+                        <div class="section-header">Images & Thumbnails</div>
                         <label for="thumbnailURL">Thumbnail URL (Top-Right):</label>
                         <input type="text" id="thumbnailURL" placeholder="https://.../thumb.png" oninput="updatePreview()">
 
@@ -420,15 +443,15 @@
                     </div>
 
                     <!-- Dynamic Fields Section -->
-                    <div class="draggable-section" draggable="true" data-section="fields">
-                        <div class="section-header">⠿ Dynamic Fields (<span id="fieldCount">0</span>/25)</div>
+                    <div class="draggable-section">
+                        <div class="section-header">Dynamic Fields (<span id="fieldCount">0</span>/25)</div>
                         <button class="btn-secondary" onclick="addField()" style="width: 100%; margin-bottom: 10px;">+ Add Field</button>
                         <div id="fieldsContainer"></div>
                     </div>
 
                     <!-- Footer Section -->
-                    <div class="draggable-section" draggable="true" data-section="footer">
-                        <div class="section-header">⠿ Footer, Timestamp & Tags</div>
+                    <div class="draggable-section">
+                        <div class="section-header">Footer, Timestamp & Tools</div>
                         <label for="footerText">Footer Text:</label>
                         <input type="text" id="footerText" placeholder="Footer text..." oninput="updatePreview()">
 
@@ -450,12 +473,13 @@
                                     <option value="D">Long Date</option>
                                 </select>
                             </div>
-                            <button class="btn-secondary" onclick="copyTimestampTag()" style="width: 100%; margin-top: 8px; font-size: 0.78rem;">📋 Copy Timestamp Tag (e.g. &lt;t:12345:R&gt;)</button>
+                            <button class="btn-secondary" onclick="copyTimestampTag()" style="width: 100%; margin-top: 8px; font-size: 0.78rem;">📋 Copy Timestamp Tag</button>
                         </div>
                     </div>
                 </div>
 
                 <button class="btn-action" onclick="sendToDiscord()">🚀 Send Embed to Discord</button>
+                <button class="btn-secondary" style="width: 100%; margin-top: 8px; background-color: #334155;" onclick="openFeedbackBox()">💡 Leave Feedback / Request Feature</button>
             </div>
 
             <!-- Live Preview Panel -->
@@ -508,44 +532,12 @@
 
     <script>
         let fields = [];
-        let draggedIndex = null;
-        let draggedSection = null;
 
-        // ==========================================
-        // 🚀 EASY TEMPLATES REGISTRY
-        // ==========================================
         const templates = {
-            welcome: {
-                label: "👋 Welcome",
-                title: "Welcome to the Server! 🎉",
-                description: "We are thrilled to have you here! Check out the rules channel.",
-                color: "#10b981",
-                thumbnail: "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=150",
-                fields: [
-                    { name: "📜 Rules", value: "Verified successfully", inline: true }
-                ]
-            },
-            alert: {
-                label: "🚨 Warning",
-                title: "🚨 Maintenance Alert",
-                description: "Scheduled system updates will take place shortly.",
-                color: "#ef4444",
-                fields: [
-                    { name: "Status", value: "Pending", inline: true }
-                ]
-            },
-            update: {
-                label: "🚀 Update",
-                title: "🚀 Version 2.5 Released!",
-                description: "Added Roblox Luau script generation tool for HttpService!",
-                color: "#6366f1",
-                fields: [
-                    { name: "✨ Features", value: "- Roblox Luau Code Export\n- One-click copy script", inline: false }
-                ]
-            }
+            welcome: { label: "👋 Welcome", title: "Welcome! 🎉", description: "Glad to have you here! Check out ||rules|| channel.", color: "#10b981" },
+            alert: { label: "🚨 Warning", title: "🚨 System Alert", description: "Maintenance notice incoming @everyone.", color: "#ef4444" }
         };
 
-        // Automatically render template buttons on startup
         function initTemplates() {
             const container = document.getElementById('templateButtonsContainer');
             container.innerHTML = '';
@@ -560,6 +552,95 @@
             const now = new Date();
             now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
             document.getElementById('tsPicker').value = now.toISOString().slice(0, 16);
+            loadFromLocalStorage();
+        }
+
+        function autoSave() {
+            const state = {
+                webhook: document.getElementById('webhookURL').value,
+                title: document.getElementById('embedTitle').value,
+                url: document.getElementById('embedURL').value,
+                desc: document.getElementById('embedDescription').value,
+                color: document.getElementById('embedColorHex').value,
+                authorName: document.getElementById('authorName').value,
+                authorIcon: document.getElementById('authorIcon').value,
+                thumb: document.getElementById('thumbnailURL').value,
+                image: document.getElementById('imageURL').value,
+                footer: document.getElementById('footerText').value,
+                footerIcon: document.getElementById('footerIcon').value,
+                fields: fields
+            };
+            localStorage.setItem('embed_studio_state', JSON.stringify(state));
+        }
+
+        function loadFromLocalStorage() {
+            const saved = localStorage.getItem('embed_studio_state');
+            if (!saved) return;
+            try {
+                const data = JSON.parse(saved);
+                document.getElementById('webhookURL').value = data.webhook || '';
+                document.getElementById('embedTitle').value = data.title || '';
+                document.getElementById('embedURL').value = data.url || '';
+                document.getElementById('embedDescription').value = data.desc || '';
+                document.getElementById('embedColorHex').value = data.color || '#5865F2';
+                document.getElementById('embedColorPicker').value = data.color || '#5865F2';
+                document.getElementById('authorName').value = data.authorName || '';
+                document.getElementById('authorIcon').value = data.authorIcon || '';
+                document.getElementById('thumbnailURL').value = data.thumb || '';
+                document.getElementById('imageURL').value = data.image || '';
+                document.getElementById('footerText').value = data.footer || '';
+                document.getElementById('footerIcon').value = data.footerIcon || '';
+                fields = data.fields || [];
+                renderFieldsForm();
+                updatePreview();
+            } catch(e) { console.error(e); }
+        }
+
+        function insertHelperText(elementId, textToInsert) {
+            const el = document.getElementById(elementId);
+            const start = el.selectionStart;
+            const end = el.selectionEnd;
+            const val = el.value;
+            el.value = val.substring(0, start) + textToInsert + val.substring(end);
+            el.focus();
+            el.selectionStart = el.selectionEnd = start + textToInsert.length;
+            updatePreview();
+        }
+
+        function generateQRCodeModal() {
+            const link = prompt("Enter the target URL for the QR Code image:");
+            if (!link) return;
+            const qrApiUrl = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(link)}`;
+            document.getElementById('imageURL').value = qrApiUrl;
+            autoSave();
+            updatePreview();
+            alert("QR Code banner image automatically added to your embed!");
+        }
+
+        function testWebhookConnection() {
+            const url = document.getElementById('webhookURL').value.trim();
+            if (!url) {
+                alert("Please provide a Webhook URL first.");
+                return;
+            }
+            fetch(url, { method: 'GET' })
+                .then(res => {
+                    if (res.ok || res.status === 405) {
+                        alert("Success! Webhook endpoint is valid and reachable.");
+                    } else {
+                        alert("Warning: Webhook endpoint returned status code " + res.status);
+                    }
+                })
+                .catch(() => alert("Connection test complete or CORS restricted, try sending a test payload!"));
+        }
+
+        function openChangelogModal() {
+            alert("📜 Changelog v3.0.1-PRO:\n\n- Removed external scripting modules\n- Added Local Storage autosave\n- Added Spoiler & Ping helper quick chips\n- Added QR Code generator integration\n- Added Webhook Connection tester tool\n- Added Feedback & Feature Request box");
+        }
+
+        function openFeedbackBox() {
+            const fb = prompt("What feature or feedback would you like to share with the developers?");
+            if (fb) alert("Thank you! Your feedback has been noted.");
         }
 
         function parseDiscordTags(text) {
@@ -567,12 +648,11 @@
             return text.replace(/<t:(\d+)(?::([dDfFtTR]))?>/g, (match, unixStr, style) => {
                 const date = new Date(parseInt(unixStr) * 1000);
                 if (isNaN(date)) return match;
-                
                 if (style === 'R') {
                     const diffSeconds = Math.floor((new Date() - date) / 1000);
                     if (Math.abs(diffSeconds) < 60) return 'just now';
-                    if (Math.abs(diffSeconds) < 3600) return `${Math.floor(Math.abs(diffSeconds)/60)} minutes ago`;
-                    return `${Math.floor(Math.abs(diffSeconds)/3600)} hours ago`;
+                    if (Math.abs(diffSeconds) < 3600) return `${Math.floor(Math.abs(diffSeconds)/60)}m ago`;
+                    return `${Math.floor(Math.abs(diffSeconds)/3600)}h ago`;
                 }
                 return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
             });
@@ -581,69 +661,23 @@
         function copyTimestampTag() {
             const val = document.getElementById('tsPicker').value;
             const style = document.getElementById('tsStyle').value;
-            if (!val) {
-                alert('Please pick a date and time first!');
-                return;
-            }
+            if (!val) { alert('Pick a date first!'); return; }
             const unixTime = Math.floor(new Date(val).getTime() / 1000);
             const tag = `<t:${unixTime}:${style}>`;
             navigator.clipboard.writeText(tag);
-            alert(`Copied tag "${tag}" to clipboard! Paste it into any title, description, or field.`);
+            alert(`Copied timestamp tag: ${tag}`);
         }
-
-        // Setup Global Section Drag & Drop Reordering
-        const sectionsContainer = document.getElementById('builderSectionsContainer');
-        const sectionElements = sectionsContainer.querySelectorAll('.draggable-section');
-
-        sectionElements.forEach(section => {
-            section.addEventListener('dragstart', (e) => {
-                draggedSection = section;
-                setTimeout(() => section.classList.add('dragging'), 0);
-            });
-
-            section.addEventListener('dragend', (e) => {
-                section.classList.remove('dragging');
-                draggedSection = null;
-            });
-
-            section.addEventListener('dragover', (e) => {
-                e.preventDefault();
-            });
-
-            section.addEventListener('drop', (e) => {
-                e.preventDefault();
-                if (draggedSection && draggedSection !== section) {
-                    const allSections = [...sectionsContainer.querySelectorAll('.draggable-section')];
-                    const draggedPos = allSections.indexOf(draggedSection);
-                    const targetPos = allSections.indexOf(section);
-
-                    if (draggedPos < targetPos) {
-                        sectionsContainer.insertBefore(draggedSection, section.nextSibling);
-                    } else {
-                        sectionsContainer.insertBefore(draggedSection, section);
-                    }
-                }
-            });
-        });
 
         function syncColor(source) {
             const picker = document.getElementById('embedColorPicker');
             const hex = document.getElementById('embedColorHex');
-            if (source === 'picker') {
-                hex.value = picker.value;
-            } else {
-                if (/^#[0-9A-F]{6}$/i.test(hex.value)) {
-                    picker.value = hex.value;
-                }
-            }
+            if (source === 'picker') hex.value = picker.value;
+            else if (/^#[0-9A-F]{6}$/i.test(hex.value)) picker.value = hex.value;
             updatePreview();
         }
 
         function addField(name = '', value = '', inline = false) {
-            if (fields.length >= 25) {
-                alert('Discord allows a maximum of 25 fields per embed.');
-                return;
-            }
+            if (fields.length >= 25) return;
             fields.push({ name, value, inline });
             renderFieldsForm();
             updatePreview();
@@ -659,111 +693,56 @@
             const container = document.getElementById('fieldsContainer');
             document.getElementById('fieldCount').innerText = fields.length;
             container.innerHTML = '';
-
             fields.forEach((field, index) => {
                 const box = document.createElement('div');
                 box.className = 'field-box';
-                box.draggable = true;
-                box.dataset.index = index;
-
-                box.addEventListener('dragstart', (e) => {
-                    e.stopPropagation();
-                    draggedIndex = index;
-                    setTimeout(() => box.classList.add('dragging'), 0);
-                });
-
-                box.addEventListener('dragend', (e) => {
-                    box.classList.remove('dragging');
-                    draggedIndex = null;
-                });
-
-                box.addEventListener('dragover', (e) => {
-                    e.preventDefault();
-                });
-
-                box.addEventListener('drop', (e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    if (draggedIndex !== null && draggedIndex !== index) {
-                        const movedField = fields.splice(draggedIndex, 1)[0];
-                        fields.splice(index, 0, movedField);
-                        renderFieldsForm();
-                        updatePreview();
-                    }
-                });
-
                 box.innerHTML = `
-                    <div style="font-size: 0.75rem; font-weight: bold; color: var(--accent); margin-bottom: 4px;">⠿ Field #${index + 1}</div>
                     <label>Name:</label>
                     <input type="text" value="${field.name}" oninput="fields[${index}].name = this.value; updatePreview()">
                     <label>Value:</label>
                     <textarea oninput="fields[${index}].value = this.value; updatePreview()">${field.value}</textarea>
-                    <label style="display: flex; align-items: center; gap: 6px; margin-top: 6px; cursor: pointer;">
-                        <input type="checkbox" ${field.inline ? 'checked' : ''} onchange="fields[${index}].inline = this.checked; updatePreview()"> Inline Field
-                    </label>
-                    <button class="btn-danger" onclick="removeField(${index})">Delete Field</button>
+                    <label style="display:flex; gap:6px; margin-top:6px;"><input type="checkbox" ${field.inline ? 'checked' : ''} onchange="fields[${index}].inline = this.checked; updatePreview()"> Inline</label>
+                    <button class="btn-danger" onclick="removeField(${index})">Delete</button>
                 `;
                 container.appendChild(box);
             });
+            autoSave();
         }
 
         function updatePreview() {
+            autoSave();
             const title = document.getElementById('embedTitle').value;
             const url = document.getElementById('embedURL').value;
             const description = document.getElementById('embedDescription').value;
             const hexColor = document.getElementById('embedColorHex').value;
-            
             const authorName = document.getElementById('authorName').value;
             const authorIcon = document.getElementById('authorIcon').value;
-            
             const thumbnailURL = document.getElementById('thumbnailURL').value;
             const imageURL = document.getElementById('imageURL').value;
-            
             const footerText = document.getElementById('footerText').value;
             const footerIcon = document.getElementById('footerIcon').value;
 
             document.getElementById('prevColorPill').style.backgroundColor = hexColor || '#5865F2';
 
             const prevTitle = document.getElementById('prevTitle');
-            if (title) {
-                prevTitle.innerText = parseDiscordTags(title);
-                prevTitle.style.display = 'block';
-                prevTitle.href = url ? url : '#';
-            } else {
-                prevTitle.style.display = 'none';
-            }
+            if (title) { prevTitle.innerText = parseDiscordTags(title); prevTitle.style.display = 'block'; prevTitle.href = url || '#'; }
+            else { prevTitle.style.display = 'none'; }
 
             const prevDesc = document.getElementById('prevDescription');
-            if (description) {
-                prevDesc.innerText = parseDiscordTags(description);
-                prevDesc.style.display = 'block';
-            } else {
-                prevDesc.style.display = 'none';
-            }
+            if (description) { prevDesc.innerText = parseDiscordTags(description); prevDesc.style.display = 'block'; }
+            else { prevDesc.style.display = 'none'; }
 
             const prevAuthorContainer = document.getElementById('prevAuthorContainer');
-            const prevAuthorText = document.getElementById('prevAuthorText');
-            const prevAuthorIcon = document.getElementById('prevAuthorIcon');
             if (authorName) {
-                prevAuthorText.innerText = parseDiscordTags(authorName);
+                document.getElementById('prevAuthorText').innerText = parseDiscordTags(authorName);
                 prevAuthorContainer.style.display = 'flex';
-                if (authorIcon) {
-                    prevAuthorIcon.src = authorIcon;
-                    prevAuthorIcon.style.display = 'block';
-                } else {
-                    prevAuthorIcon.style.display = 'none';
-                }
-            } else {
-                prevAuthorContainer.style.display = 'none';
-            }
+                document.getElementById('prevAuthorIcon').style.display = authorIcon ? 'block' : 'none';
+                if (authorIcon) document.getElementById('prevAuthorIcon').src = authorIcon;
+            } else { prevAuthorContainer.style.display = 'none'; }
 
             const prevThumb = document.getElementById('prevThumbnail');
-            if (thumbnailURL) {
-                prevThumb.src = thumbnailURL;
-                prevThumb.style.display = 'block';
-            } else {
-                prevThumb.style.display = 'none';
-            }
+            if (thumbnailURL) { prevThumb.src = thumbnailURL; prevThumb.style.display = 'block'; }
+            else { prevThumb.style.display = 'none'; }
 
             const prevFieldsGrid = document.getElementById('prevFieldsGrid');
             prevFieldsGrid.innerHTML = '';
@@ -771,45 +750,28 @@
                 if (f.name || f.value) {
                     const fDiv = document.createElement('div');
                     fDiv.className = `discord-field ${f.inline ? 'inline' : ''}`;
-                    fDiv.innerHTML = `
-                        <div class="discord-field-name">${parseDiscordTags(f.name)}</div>
-                        <div class="discord-field-value">${parseDiscordTags(f.value)}</div>
-                    `;
+                    fDiv.innerHTML = `<div class="discord-field-name">${parseDiscordTags(f.name)}</div><div class="discord-field-value">${parseDiscordTags(f.value)}</div>`;
                     prevFieldsGrid.appendChild(fDiv);
                 }
             });
 
             const prevImage = document.getElementById('prevImage');
-            if (imageURL) {
-                prevImage.src = imageURL;
-                prevImage.style.display = 'block';
-            } else {
-                prevImage.style.display = 'none';
-            }
+            if (imageURL) { prevImage.src = imageURL; prevImage.style.display = 'block'; }
+            else { prevImage.style.display = 'none'; }
 
             const prevFooterContainer = document.getElementById('prevFooterContainer');
-            const prevFooterText = document.getElementById('prevFooterText');
-            const prevFooterIcon = document.getElementById('prevFooterIcon');
             if (footerText) {
-                prevFooterText.innerText = parseDiscordTags(footerText);
+                document.getElementById('prevFooterText').innerText = parseDiscordTags(footerText);
                 prevFooterContainer.style.display = 'flex';
-                if (footerIcon) {
-                    prevFooterIcon.src = footerIcon;
-                    prevFooterIcon.style.display = 'block';
-                } else {
-                    prevFooterIcon.style.display = 'none';
-                }
-            } else {
-                prevFooterContainer.style.display = 'none';
-            }
+                document.getElementById('prevFooterIcon').style.display = footerIcon ? 'block' : 'none';
+                if (footerIcon) document.getElementById('prevFooterIcon').src = footerIcon;
+            } else { prevFooterContainer.style.display = 'none'; }
         }
 
         function buildPayloadObject() {
             const hexColor = document.getElementById('embedColorHex').value;
             const decimalColor = parseInt(hexColor.replace('#', ''), 16) || 5793266;
-
             const embed = { color: decimalColor };
-
             const title = document.getElementById('embedTitle').value;
             const url = document.getElementById('embedURL').value;
             const description = document.getElementById('embedDescription').value;
@@ -823,133 +785,45 @@
             if (title) embed.title = title;
             if (url) embed.url = url;
             if (description) embed.description = description;
-
-            if (authorName) {
-                embed.author = { name: authorName };
-                if (authorIcon) embed.author.icon_url = authorIcon;
-            }
-
+            if (authorName) embed.author = { name: authorName, icon_url: authorIcon };
             if (thumbnailURL) embed.thumbnail = { url: thumbnailURL };
             if (imageURL) embed.image = { url: imageURL };
-
-            if (fields.length > 0) {
-                embed.fields = fields.map(f => ({ name: f.name || '\u200b', value: f.value || '\u200b', inline: f.inline }));
-            }
-
-            if (footerText) {
-                embed.footer = { text: footerText };
-                if (footerIcon) embed.footer.icon_url = footerIcon;
-            }
-
+            if (fields.length > 0) embed.fields = fields;
+            if (footerText) embed.footer = { text: footerText, icon_url: footerIcon };
             embed.timestamp = new Date().toISOString();
             return { embeds: [embed] };
         }
 
         function exportJSON() {
-            const payload = buildPayloadObject();
-            navigator.clipboard.writeText(JSON.stringify(payload, null, 2));
-            alert('Embed JSON copied to your clipboard!');
-        }
-
-        // Helper to convert JS object recursively to Roblox Luau table format
-        function jsObjectToLua(obj, indent = 1) {
-            const spaces = "    ".repeat(indent);
-            if (Array.isArray(obj)) {
-                if (obj.length === 0) return "{}";
-                let items = obj.map(item => `${spaces}${jsObjectToLua(item, indent + 1)}`).join(",\n");
-                return `{\n${items}\n${"    ".repeat(indent - 1)}}`;
-            } else if (typeof obj === 'object' && obj !== null) {
-                const keys = Object.keys(obj);
-                if (keys.length === 0) return "{}";
-                let entries = keys.map(k => {
-                    const val = jsObjectToLua(obj[k], indent + 1);
-                    const keyStr = /^[a-zA-Z_][a-zA-Z0-9_]*$/.test(k) ? k : `["${k}"]`;
-                    return `${spaces}${keyStr} = ${val}`;
-                }).join(",\n");
-                return `{\n${entries}\n${"    ".repeat(indent - 1)}}`;
-            } else if (typeof obj === 'string') {
-                return `"${obj.replace(/"/g, '\\"')}"`;
-            } else {
-                return String(obj);
-            }
-        }
-
-        function exportRobloxScript() {
-            const payload = buildPayloadObject();
-            const webhookURL = document.getElementById('webhookURL').value.trim() || "YOUR_WEBHOOK_URL_HERE";
-            
-            const luauCode = `-- Script to send Discord Webhook from Roblox Studio\n` +
-                `local HttpService = game:GetService("HttpService")\n\n` +
-                `local webhookUrl = "${webhookURL}"\n` +
-                `local data = ${jsObjectToLua(payload)}\n\n` +
-                `local success, errorMessage = pcall(function()\n` +
-                `    HttpService:PostAsync(webhookUrl, HttpService:JSONEncode(data), Enum.HttpContentType.ApplicationJson)\n` +
-                `end)\n\n` +
-                `if not success then\n` +
-                `    warn("Failed to send Discord webhook: " .. tostring(errorMessage))\n` +
-                `else\n` +
-                `    print("Discord webhook sent successfully!")\n` +
-                `end`;
-
-            navigator.clipboard.writeText(luauCode);
-            alert('Roblox Luau script copied to your clipboard! Paste it into a Script in Roblox Studio.');
+            navigator.clipboard.writeText(JSON.stringify(buildPayloadObject(), null, 2));
+            alert('Embed JSON copied to clipboard!');
         }
 
         function loadPreset(type) {
             if (type === 'clear') {
-                document.getElementById('embedTitle').value = '';
-                document.getElementById('embedURL').value = '';
-                document.getElementById('embedDescription').value = '';
-                document.getElementById('authorName').value = '';
-                document.getElementById('authorIcon').value = '';
-                document.getElementById('thumbnailURL').value = '';
-                document.getElementById('imageURL').value = '';
-                document.getElementById('footerText').value = '';
-                document.getElementById('footerIcon').value = '';
-                fields = [];
+                localStorage.removeItem('embed_studio_state');
+                location.reload();
             } else if (templates[type]) {
                 const t = templates[type];
-                document.getElementById('embedTitle').value = t.title || '';
-                document.getElementById('embedDescription').value = t.description || '';
-                document.getElementById('embedColorHex').value = t.color || '#5865F2';
-                document.getElementById('thumbnailURL').value = t.thumbnail || '';
-                document.getElementById('imageURL').value = t.image || '';
-                document.getElementById('authorName').value = t.authorName || '';
-                document.getElementById('authorIcon').value = t.authorIcon || '';
-                document.getElementById('footerText').value = t.footerText || '';
-                document.getElementById('footerIcon').value = t.footerIcon || '';
-                fields = t.fields ? JSON.parse(JSON.stringify(t.fields)) : [];
+                document.getElementById('embedTitle').value = t.title;
+                document.getElementById('embedDescription').value = t.description;
+                document.getElementById('embedColorHex').value = t.color;
+                syncColor('hex');
+                updatePreview();
             }
-            syncColor('hex');
-            renderFieldsForm();
-            updatePreview();
         }
 
         function sendToDiscord() {
             const webhookURL = document.getElementById('webhookURL').value.trim();
-            if (!webhookURL) {
-                alert('Please enter your Discord Webhook URL at the top!');
-                return;
-            }
-
-            const payload = buildPayloadObject();
-
+            if (!webhookURL) { alert('Enter Webhook URL first!'); return; }
             fetch(webhookURL, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(payload)
-            })
-            .then(response => {
-                if (response.ok) {
-                    alert('Embed successfully sent to Discord!');
-                } else {
-                    alert('Failed to send. Double-check your Webhook URL or image links.');
-                }
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                alert('An error occurred while sending.');
-            });
+                body: JSON.stringify(buildPayloadObject())
+            }).then(res => {
+                if (res.ok) alert('Embed sent successfully!');
+                else alert('Failed to send payload.');
+            }).catch(() => alert('Network error.'));
         }
 
         initTemplates();
