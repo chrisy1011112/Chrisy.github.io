@@ -1,6 +1,19 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+    <!-- ============================================================
+         QUICK CONFIG — edit these values directly, then save the file.
+         These are the only things you should need to change by hand.
+         ============================================================ -->
+    <script>
+        window.EMBED_STUDIO_CONFIG = {
+            DEFAULT_ADMIN_PIN: 'changeme123',      // change this, then also change it from within the Admin Panel the first time you log in
+            DEFAULT_MAX_SENDS: 3,                  // max sends allowed per person in the time window below
+            DEFAULT_WINDOW_SECONDS: 15,             // time window (seconds) the max-sends limit applies to
+            DEFAULT_AUTOBAN_THRESHOLD: 3,           // spam violations before a name gets auto-banned
+            DEFAULT_AUTOBAN_ENABLED: true           // set to false to disable auto-banning entirely
+        };
+    </script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Ultimate Discord Embed Studio Pro</title>
@@ -15,6 +28,9 @@
             --border: #e2e8f0;
             --discord-chat: #313338;
             --discord-content: #2b2d31;
+            --danger: #ef4444;
+            --warn: #d97706;
+            --ok: #16a34a;
         }
         body {
             font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
@@ -33,16 +49,29 @@
             flex-direction: column;
             gap: 20px;
         }
-        .top-bar {
+
+        /* ===== Settings bar (pinned to top, everything the tool NEEDS lives here) ===== */
+        .settings-bar {
             background: var(--panel-bg);
-            padding: 15px 25px;
             border-radius: 12px;
-            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.2);
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.25);
+            padding: 18px 25px;
+            border: 2px solid var(--accent);
+        }
+        .settings-bar-top {
             display: flex;
             justify-content: space-between;
             align-items: center;
             flex-wrap: wrap;
-            gap: 15px;
+            gap: 12px;
+            margin-bottom: 12px;
+        }
+        .settings-title {
+            font-weight: 800;
+            font-size: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 8px;
         }
         .version-badge {
             background: #e0e7ff;
@@ -52,6 +81,41 @@
             font-size: 0.8rem;
             font-weight: 700;
             letter-spacing: 0.5px;
+        }
+        .settings-row {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+            align-items: flex-end;
+        }
+        .settings-field {
+            flex: 1;
+            min-width: 240px;
+        }
+        .settings-field label {
+            display: block;
+            font-weight: 600;
+            font-size: 0.78rem;
+            color: var(--text-muted);
+            margin-bottom: 3px;
+        }
+        .webhook-status {
+            font-size: 0.75rem;
+            margin-top: 4px;
+            min-height: 16px;
+        }
+        .webhook-status.ok { color: var(--ok); }
+        .webhook-status.warn { color: var(--warn); }
+        .webhook-status.err { color: var(--danger); }
+        .settings-actions {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+        .settings-note {
+            font-size: 0.72rem;
+            color: var(--text-muted);
+            margin-top: 10px;
         }
         .templates-group, .actions-group {
             display: flex;
@@ -97,7 +161,7 @@
             border-bottom: 2px solid var(--border);
             padding-bottom: 8px;
         }
-        .draggable-section {
+        .form-section {
             border: 1px solid var(--border);
             border-radius: 8px;
             padding: 12px;
@@ -112,6 +176,7 @@
             display: flex;
             align-items: center;
             gap: 6px;
+            justify-content: space-between;
         }
         label {
             display: block;
@@ -120,6 +185,14 @@
             font-size: 0.78rem;
             color: var(--text-muted);
         }
+        .char-count {
+            font-weight: 500;
+            font-size: 0.7rem;
+            color: var(--text-muted);
+            float: right;
+        }
+        .char-count.warn { color: var(--warn); }
+        .char-count.err { color: var(--danger); font-weight: 700; }
         input[type="text"], input[type="datetime-local"], textarea, select {
             width: 100%;
             padding: 8px 10px;
@@ -129,6 +202,10 @@
             box-sizing: border-box;
             font-size: 0.9rem;
             font-family: inherit;
+        }
+        input[type="text"].invalid {
+            border-color: var(--danger);
+            background: #fef2f2;
         }
         textarea {
             resize: vertical;
@@ -155,6 +232,20 @@
             border-radius: 6px;
             margin-top: 8px;
         }
+        .field-box-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .field-box-header .drag-handle {
+            cursor: grab;
+            color: var(--text-muted);
+            font-size: 0.9rem;
+            user-select: none;
+        }
+        .field-box.dragging {
+            opacity: 0.4;
+        }
         .btn-action {
             background: var(--accent);
             color: white;
@@ -171,8 +262,12 @@
         .btn-action:hover {
             background: var(--accent-hover);
         }
+        .btn-action:disabled {
+            background: #94a3b8;
+            cursor: not-allowed;
+        }
         .btn-danger {
-            background: #ef4444;
+            background: var(--danger);
             color: white;
             border: none;
             padding: 4px 8px;
@@ -238,6 +333,11 @@
             box-shadow: 0 10px 25px rgba(0,0,0,0.3);
             max-height: 80vh;
             overflow-y: auto;
+        }
+        .modal-content textarea {
+            height: 140px;
+            font-family: 'Consolas', 'Courier New', monospace;
+            font-size: 0.78rem;
         }
 
         /* Discord Preview Layout */
@@ -375,48 +475,130 @@
             object-fit: cover;
             display: none;
         }
+
+        /* ===== Admin / anti-spam UI ===== */
+        .admin-tabs {
+            display: flex;
+            gap: 6px;
+            margin-bottom: 12px;
+            border-bottom: 1px solid var(--border);
+        }
+        .admin-tab {
+            background: none;
+            border: none;
+            padding: 8px 12px;
+            font-size: 0.82rem;
+            font-weight: 700;
+            color: var(--text-muted);
+            cursor: pointer;
+            border-bottom: 2px solid transparent;
+        }
+        .admin-tab.active {
+            color: var(--accent);
+            border-bottom-color: var(--accent);
+        }
+        .admin-pane { display: none; }
+        .admin-pane.active { display: block; }
+        .list-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 10px;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            margin-bottom: 6px;
+            font-size: 0.82rem;
+            background: #f8fafc;
+        }
+        .list-row .meta { color: var(--text-muted); font-size: 0.72rem; }
+        .pill-danger {
+            background: #fee2e2;
+            color: #991b1b;
+            padding: 2px 8px;
+            border-radius: 10px;
+            font-size: 0.68rem;
+            font-weight: 700;
+        }
+        .inline-add-row { display: flex; gap: 8px; margin-bottom: 12px; }
+        .inline-add-row input { margin-top: 0; }
+        .empty-note { color: var(--text-muted); font-size: 0.82rem; text-align: center; margin: 16px 0; }
+        .banned-banner {
+            background: #fee2e2;
+            border: 1px solid #fecaca;
+            color: #991b1b;
+            padding: 10px 12px;
+            border-radius: 8px;
+            font-size: 0.82rem;
+            font-weight: 600;
+            margin-top: 10px;
+            display: none;
+        }
     </style>
 </head>
 <body>
 
     <div class="wrapper">
-        <!-- Quick Templates & Version Bar -->
-        <div class="top-bar">
-            <div class="templates-group">
-                <span class="version-badge">v3.1.0-PRO</span>
-                <span style="font-size: 0.85rem; font-weight: bold; color: var(--text-muted); margin-left: 5px;">Presets:</span>
-                <div id="templateButtonsContainer" style="display:inline-flex; gap:8px;"></div>
-                <button class="btn-preset" onclick="loadPreset('clear')">🧹 Clear</button>
+
+        <!-- ============================================================ -->
+        <!-- SETTINGS BAR — everything required to actually USE the tool  -->
+        <!-- (webhook connection + send + import/export) lives here, at   -->
+        <!-- the very top, above the builder and preview.                -->
+        <!-- ============================================================ -->
+        <div class="settings-bar">
+            <div class="settings-bar-top">
+                <div class="settings-title">
+                    ⚙️ Connection Settings <span class="version-badge">v3.2.0-PRO</span>
+                </div>
+                <div class="templates-group">
+                    <span style="font-size: 0.85rem; font-weight: bold; color: var(--text-muted);">Presets:</span>
+                    <div id="templateButtonsContainer" style="display:inline-flex; gap:8px;"></div>
+                    <button class="btn-preset" onclick="loadPreset('clear')">🧹 Clear</button>
+                </div>
             </div>
-            <div class="actions-group">
-                <button class="btn-secondary" onclick="exportJSON()">📋 Copy JSON</button>
-                <button class="btn-secondary" style="background-color: #0d9488;" onclick="testWebhookConnection()">🔌 Test Webhook</button>
-                <button class="btn-secondary" style="background-color: #7c3aed;" onclick="openFeedbackModal()">📥 View Feedback Inbox</button>
+
+            <div class="settings-row">
+                <div class="settings-field" style="flex: 2;">
+                    <label for="webhookURL">Discord Webhook URL</label>
+                    <input type="text" id="webhookURL" placeholder="https://discord.com/api/webhooks/..." oninput="onWebhookInput()">
+                    <div class="webhook-status" id="webhookStatus"></div>
+                </div>
+                <div class="settings-field" style="flex: 1; min-width: 160px;">
+                    <label for="senderName">Your Name (required to send)</label>
+                    <input type="text" id="senderName" placeholder="e.g. Alex" maxlength="40" oninput="autoSave()">
+                </div>
+                <div class="settings-actions">
+                    <button class="btn-secondary" style="background-color: #0d9488;" onclick="testWebhookConnection()">🔌 Test Webhook</button>
+                    <button class="btn-secondary" onclick="exportJSON()">📋 Copy JSON</button>
+                    <button class="btn-secondary" onclick="openImportModal()">📤 Import JSON</button>
+                    <button class="btn-secondary" style="background-color: #7c3aed;" onclick="openFeedbackModal()">📥 Feedback Inbox</button>
+                    <button class="btn-secondary" style="background-color: #b91c1c;" onclick="openAdminModal()">🛡️ Admin Panel</button>
+                </div>
             </div>
+
+            <button class="btn-action" id="sendBtn" onclick="sendToDiscord()">🚀 Send Embed to Discord</button>
+            <div class="banned-banner" id="bannedBanner">🚫 This name is banned from sending on this browser. Contact the site admin if you think this is a mistake.</div>
+            <div class="settings-note">Saved locally in your browser only (localStorage) — never sent anywhere except the webhook URL above when you click Send. Sends are rate-limited per name (max <span id="rateLimitNote">3 per 15s</span>); repeated spamming gets logged and can auto-ban that name on this browser.</div>
         </div>
 
         <div class="main-grid">
             <!-- Form Configurator -->
             <div class="card">
                 <h2>Builder Controls ⚡</h2>
-                <p style="font-size: 0.78rem; color: var(--text-muted); margin-top: -10px; margin-bottom: 15px;">Autosave is active (Local Storage)</p>
-                
-                <div id="builderSectionsContainer">
-                    <!-- General Settings Section -->
-                    <div class="draggable-section">
-                        <div class="section-header">General Settings</div>
-                        <label for="webhookURL">Webhook URL:</label>
-                        <input type="text" id="webhookURL" placeholder="https://discord.com/api/webhooks/..." oninput="autoSave()">
 
-                        <label for="embedTitle">Title:</label>
-                        <input type="text" id="embedTitle" placeholder="Embed title..." oninput="updatePreview()">
+                <div id="builderSectionsContainer">
+                    <!-- Content Section -->
+                    <div class="form-section">
+                        <div class="section-header">Content</div>
+                        <label for="embedTitle">Title <span class="char-count" id="cc-title">0/256</span></label>
+                        <input type="text" id="embedTitle" placeholder="Embed title..." maxlength="256" oninput="updatePreview()">
 
                         <label for="embedURL">Title Hyperlink URL:</label>
                         <input type="text" id="embedURL" placeholder="https://example.com" oninput="updatePreview()">
 
-                        <label for="embedDescription">Description:</label>
-                        <textarea id="embedDescription" placeholder="Main description..." oninput="updatePreview()"></textarea>
-                        
+                        <label for="embedDescription">Description <span class="char-count" id="cc-desc">0/4096</span></label>
+                        <textarea id="embedDescription" placeholder="Main description..." maxlength="4096" oninput="updatePreview()"></textarea>
+
                         <!-- Spoiler Tag & Ping Helper Chips -->
                         <div class="helper-chips">
                             <span style="font-size: 0.7rem; font-weight: bold; align-self: center; color: var(--text-muted);">Quick Helpers:</span>
@@ -434,17 +616,17 @@
                     </div>
 
                     <!-- Author Section -->
-                    <div class="draggable-section">
+                    <div class="form-section">
                         <div class="section-header">Author Information</div>
-                        <label for="authorName">Author Name:</label>
-                        <input type="text" id="authorName" placeholder="Author name..." oninput="updatePreview()">
+                        <label for="authorName">Author Name <span class="char-count" id="cc-author">0/256</span></label>
+                        <input type="text" id="authorName" placeholder="Author name..." maxlength="256" oninput="updatePreview()">
 
                         <label for="authorIcon">Author Icon URL:</label>
                         <input type="text" id="authorIcon" placeholder="https://.../icon.png" oninput="updatePreview()">
                     </div>
 
                     <!-- Images Section -->
-                    <div class="draggable-section">
+                    <div class="form-section">
                         <div class="section-header">Images & Thumbnails</div>
                         <label for="thumbnailURL">Thumbnail URL (Top-Right):</label>
                         <input type="text" id="thumbnailURL" placeholder="https://.../thumb.png" oninput="updatePreview()">
@@ -454,17 +636,17 @@
                     </div>
 
                     <!-- Dynamic Fields Section -->
-                    <div class="draggable-section">
-                        <div class="section-header">Dynamic Fields (<span id="fieldCount">0</span>/25)</div>
+                    <div class="form-section">
+                        <div class="section-header">Fields (<span id="fieldCount">0</span>/25)</div>
                         <button class="btn-secondary" onclick="addField()" style="width: 100%; margin-bottom: 10px;">+ Add Field</button>
                         <div id="fieldsContainer"></div>
                     </div>
 
                     <!-- Footer Section -->
-                    <div class="draggable-section">
+                    <div class="form-section">
                         <div class="section-header">Footer, Timestamp & Tools</div>
-                        <label for="footerText">Footer Text:</label>
-                        <input type="text" id="footerText" placeholder="Footer text..." oninput="updatePreview()">
+                        <label for="footerText">Footer Text <span class="char-count" id="cc-footer">0/2048</span></label>
+                        <input type="text" id="footerText" placeholder="Footer text..." maxlength="2048" oninput="updatePreview()">
 
                         <label for="footerIcon">Footer Icon URL:</label>
                         <input type="text" id="footerIcon" placeholder="https://.../footer-icon.png" oninput="updatePreview()">
@@ -486,10 +668,14 @@
                             </div>
                             <button class="btn-secondary" onclick="copyTimestampTag()" style="width: 100%; margin-top: 8px; font-size: 0.78rem;">📋 Copy Timestamp Tag</button>
                         </div>
+
+                        <label style="display:flex; align-items:center; gap:6px; margin-top: 12px;">
+                            <input type="checkbox" id="includeTimestamp" style="width:auto; margin:0;" onchange="updatePreview()"> Include "sent at" timestamp in embed
+                        </label>
                     </div>
                 </div>
 
-                <button class="btn-action" onclick="sendToDiscord()">🚀 Send Embed to Discord</button>
+                <div class="char-count" id="cc-total" style="float:none; font-size:0.8rem; text-align:right; margin-top: 6px;">Total: 0/6000</div>
                 <button class="btn-secondary" style="width: 100%; margin-top: 8px; background-color: #334155;" onclick="openFeedbackBox()">💡 Leave Feedback / Request Feature</button>
             </div>
 
@@ -513,7 +699,7 @@
                                     <div class="discord-thumb-row">
                                         <div style="flex: 1; overflow: hidden;">
                                             <!-- Title -->
-                                            <a href="#" id="prevTitle" class="discord-title" style="display: none;" target="_blank"></a>
+                                            <a href="#" id="prevTitle" class="discord-title" style="display: none;" target="_blank" rel="noopener noreferrer"></a>
                                             <!-- Description -->
                                             <div id="prevDescription" class="discord-description" style="display: none;"></div>
                                         </div>
@@ -554,13 +740,378 @@
         </div>
     </div>
 
+    <!-- Import JSON Modal -->
+    <div class="modal-overlay" id="importModal">
+        <div class="modal-content">
+            <h2 style="margin-top:0;">📤 Import Embed JSON</h2>
+            <p style="font-size: 0.85rem; color: var(--text-muted);">Paste a Discord embed payload (the same shape "Copy JSON" produces) to load it into the builder.</p>
+            <textarea id="importTextarea" placeholder='{"embeds":[{"title":"...", ...}]}'></textarea>
+            <div id="importError" style="color: var(--danger); font-size: 0.8rem; margin-top: 6px;"></div>
+            <div style="display: flex; gap: 10px; margin-top: 10px;">
+                <button class="btn-action" style="margin-top:0; flex: 1;" onclick="importJSON()">Load into Builder</button>
+                <button class="btn-secondary" style="flex: 1;" onclick="closeImportModal()">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Admin Panel Modal (banned names + spam/send log) -->
+    <div class="modal-overlay" id="adminModal">
+        <div class="modal-content" style="max-width: 560px;">
+            <h2 style="margin-top:0;">🛡️ Admin Panel</h2>
+
+            <!-- PIN gate -->
+            <div id="adminLockScreen">
+                <p style="font-size: 0.85rem; color: var(--text-muted);" id="adminLockText"></p>
+                <input type="text" id="adminPinInput" placeholder="Enter admin PIN" maxlength="20" style="margin-top:0;">
+                <div id="adminPinError" style="color: var(--danger); font-size: 0.8rem; margin-top: 6px;"></div>
+                <div style="display:flex; gap:10px; margin-top:10px;">
+                    <button class="btn-action" style="margin-top:0; flex:1;" onclick="submitAdminPin()">Unlock</button>
+                    <button class="btn-secondary" style="flex:1;" onclick="closeAdminModal()">Cancel</button>
+                </div>
+                <p class="settings-note" style="margin-top:12px;">This PIN only hides the panel on this browser/device — it isn't real security. Anyone with dev-tools access to this page's storage can bypass it. Default PIN is <code>changeme123</code> until you change it.</p>
+            </div>
+
+            <!-- Unlocked admin content -->
+            <div id="adminContent" style="display:none;">
+                <div class="admin-tabs">
+                    <button class="admin-tab active" id="tabBtnSettings" onclick="switchAdminTab('settings')">⚙️ Settings</button>
+                    <button class="admin-tab" id="tabBtnBans" onclick="switchAdminTab('bans')">🚫 Banned Names</button>
+                    <button class="admin-tab" id="tabBtnLog" onclick="switchAdminTab('log')">📈 Send / Spam Log</button>
+                </div>
+
+                <div class="admin-pane active" id="paneSettings">
+                    <label for="rateLimitCount">Max sends allowed in the time window:</label>
+                    <input type="text" id="rateLimitCount" oninput="saveRateLimitSettings()">
+                    <label for="rateLimitWindow">Time window (seconds):</label>
+                    <input type="text" id="rateLimitWindow" oninput="saveRateLimitSettings()">
+                    <label for="autoBanThreshold">Auto-ban a name after this many spam violations:</label>
+                    <input type="text" id="autoBanThreshold" oninput="saveRateLimitSettings()">
+                    <label style="display:flex; align-items:center; gap:6px; margin-top: 14px;">
+                        <input type="checkbox" id="autoBanEnabled" style="width:auto; margin:0;" onchange="saveRateLimitSettings()"> Enable auto-ban
+                    </label>
+                    <hr style="margin: 16px 0; border-color: var(--border);">
+                    <button class="btn-secondary" onclick="changeAdminPin()">Change Admin PIN</button>
+                </div>
+
+                <div class="admin-pane" id="paneBans">
+                    <div class="inline-add-row">
+                        <input type="text" id="newBanName" placeholder="Name to ban...">
+                        <button class="btn-secondary" onclick="addBanFromInput()">Ban</button>
+                    </div>
+                    <div id="banListContainer"></div>
+                </div>
+
+                <div class="admin-pane" id="paneLog">
+                    <div style="display:flex; justify-content:flex-end; margin-bottom: 8px;">
+                        <button class="btn-danger" onclick="clearSpamLog()">Clear Log</button>
+                    </div>
+                    <div id="spamLogContainer"></div>
+                </div>
+
+                <div style="display:flex; gap:10px; margin-top:14px;">
+                    <button class="btn-secondary" style="flex:1;" onclick="closeAdminModal()">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <script>
         let fields = [];
+        let dragSrcIndex = null;
+        let adminUnlocked = false;
 
         const templates = {
             welcome: { label: "👋 Welcome", title: "Welcome! 🎉", description: "Glad to have you here! Check out ||rules|| channel.", color: "#10b981" },
             alert: { label: "🚨 Warning", title: "🚨 System Alert", description: "Maintenance notice incoming @everyone.", color: "#ef4444" }
         };
+
+        function escapeHtml(str) {
+            const div = document.createElement('div');
+            div.textContent = str == null ? '' : String(str);
+            return div.innerHTML;
+        }
+
+        // ================= Anti-spam / ban / admin system =================
+        // NOTE: everything below is stored in this browser's localStorage.
+        // It stops accidental/casual spam and gives you a place to manage
+        // names, but it is NOT real security — clearing site data, a
+        // different browser, or incognito mode resets all of it. The
+        // webhook URL itself is the real access boundary.
+
+        const LS_BANS = 'embed_studio_banned_names';
+        const LS_SPAMLOG = 'embed_studio_spam_log';
+        const LS_SENDLOG = 'embed_studio_send_log';
+        const LS_RLSETTINGS = 'embed_studio_rl_settings';
+        const LS_ADMIN_PIN_HASH = 'embed_studio_admin_pin_hash';
+        const LS_ADMIN_ATTEMPTS = 'embed_studio_admin_attempts';
+        // Default PIN, pre-set so a random visitor can't claim admin by opening
+        // the panel first. Edit this in the QUICK CONFIG block at the very top
+        // of the file, then also change it from within the Admin Panel.
+        const DEFAULT_ADMIN_PIN = window.EMBED_STUDIO_CONFIG.DEFAULT_ADMIN_PIN;
+
+        async function sha256Hex(text) {
+            const buf = new TextEncoder().encode(text);
+            const hashBuf = await crypto.subtle.digest('SHA-256', buf);
+            return Array.from(new Uint8Array(hashBuf)).map(b => b.toString(16).padStart(2, '0')).join('');
+        }
+
+        async function ensureAdminPinInitialized() {
+            if (!localStorage.getItem(LS_ADMIN_PIN_HASH)) {
+                localStorage.setItem(LS_ADMIN_PIN_HASH, await sha256Hex(DEFAULT_ADMIN_PIN));
+            }
+        }
+
+        function getAdminAttempts() {
+            try { return JSON.parse(localStorage.getItem(LS_ADMIN_ATTEMPTS) || '{"count":0,"lockedUntil":0}'); }
+            catch (e) { return { count: 0, lockedUntil: 0 }; }
+        }
+        function saveAdminAttempts(a) { localStorage.setItem(LS_ADMIN_ATTEMPTS, JSON.stringify(a)); }
+
+        function getRateLimitSettings() {
+            const cfg = window.EMBED_STUDIO_CONFIG;
+            const defaults = {
+                maxSends: cfg.DEFAULT_MAX_SENDS,
+                windowSeconds: cfg.DEFAULT_WINDOW_SECONDS,
+                autoBanThreshold: cfg.DEFAULT_AUTOBAN_THRESHOLD,
+                autoBanEnabled: cfg.DEFAULT_AUTOBAN_ENABLED
+            };
+            try {
+                return { ...defaults, ...JSON.parse(localStorage.getItem(LS_RLSETTINGS) || '{}') };
+            } catch (e) { return defaults; }
+        }
+
+        function saveRateLimitSettings() {
+            const settings = {
+                maxSends: Math.max(1, parseInt(document.getElementById('rateLimitCount').value) || 3),
+                windowSeconds: Math.max(1, parseInt(document.getElementById('rateLimitWindow').value) || 15),
+                autoBanThreshold: Math.max(1, parseInt(document.getElementById('autoBanThreshold').value) || 3),
+                autoBanEnabled: document.getElementById('autoBanEnabled').checked
+            };
+            localStorage.setItem(LS_RLSETTINGS, JSON.stringify(settings));
+            document.getElementById('rateLimitNote').textContent = `${settings.maxSends} per ${settings.windowSeconds}s`;
+        }
+
+        function getBans() {
+            try { return JSON.parse(localStorage.getItem(LS_BANS) || '[]'); } catch (e) { return []; }
+        }
+        function saveBans(list) { localStorage.setItem(LS_BANS, JSON.stringify(list)); }
+        function isBanned(name) {
+            const norm = (name || '').trim().toLowerCase();
+            if (!norm) return false;
+            return getBans().some(b => b.name.toLowerCase() === norm);
+        }
+        function banName(name, reason) {
+            const norm = (name || '').trim();
+            if (!norm) return;
+            const bans = getBans();
+            if (bans.some(b => b.name.toLowerCase() === norm.toLowerCase())) return;
+            bans.push({ name: norm, date: new Date().toLocaleString(), reason: reason || 'Manually banned' });
+            saveBans(bans);
+        }
+        function unbanName(name) {
+            saveBans(getBans().filter(b => b.name !== name));
+            renderBanList();
+        }
+
+        function getSpamLog() {
+            try { return JSON.parse(localStorage.getItem(LS_SPAMLOG) || '[]'); } catch (e) { return []; }
+        }
+        function logSpamEvent(name, detail) {
+            const log = getSpamLog();
+            log.push({ name: name || '(no name)', date: new Date().toLocaleString(), detail });
+            localStorage.setItem(LS_SPAMLOG, JSON.stringify(log));
+        }
+        function clearSpamLog() {
+            if (!confirm('Clear the entire send/spam log?')) return;
+            localStorage.removeItem(LS_SPAMLOG);
+            renderSpamLog();
+        }
+
+        function getSendLog() {
+            try { return JSON.parse(localStorage.getItem(LS_SENDLOG) || '{}'); } catch (e) { return {}; }
+        }
+        function saveSendLog(log) { localStorage.setItem(LS_SENDLOG, JSON.stringify(log)); }
+
+        // Returns { allowed: bool, reason: string|null }
+        function checkAndRecordSend(name) {
+            const settings = getRateLimitSettings();
+            const now = Date.now();
+            const windowMs = settings.windowSeconds * 1000;
+            const log = getSendLog();
+            const key = (name || '').trim().toLowerCase() || '(no name)';
+            const timestamps = (log[key] || []).filter(t => now - t < windowMs);
+
+            if (timestamps.length >= settings.maxSends) {
+                logSpamEvent(name, `Blocked: ${timestamps.length + 1} sends within ${settings.windowSeconds}s (limit ${settings.maxSends})`);
+                const violations = getSpamLog().filter(e => (e.name || '').toLowerCase() === key).length;
+                if (settings.autoBanEnabled && violations >= settings.autoBanThreshold && !isBanned(name)) {
+                    banName(name, `Auto-banned after ${violations} spam violations`);
+                    return { allowed: false, reason: `Rate limit exceeded. This name has now been auto-banned after ${violations} violations.` };
+                }
+                return { allowed: false, reason: `Slow down — max ${settings.maxSends} sends per ${settings.windowSeconds}s. Try again shortly.` };
+            }
+
+            timestamps.push(now);
+            log[key] = timestamps;
+            saveSendLog(log);
+            return { allowed: true, reason: null };
+        }
+
+        function checkSenderBeforeSend() {
+            const name = document.getElementById('senderName').value.trim();
+            const banner = document.getElementById('bannedBanner');
+            if (!name) {
+                alert('Enter your name in "Your Name" before sending — it\'s used for rate limiting and moderation.');
+                return { ok: false };
+            }
+            if (isBanned(name)) {
+                banner.style.display = 'block';
+                logSpamEvent(name, 'Attempted send while banned');
+                return { ok: false };
+            }
+            banner.style.display = 'none';
+            const rl = checkAndRecordSend(name);
+            if (!rl.allowed) {
+                alert(rl.reason);
+                if (isBanned(name)) banner.style.display = 'block';
+                return { ok: false };
+            }
+            return { ok: true };
+        }
+
+        // ---- Admin modal UI ----
+        async function openAdminModal() {
+            await ensureAdminPinInitialized();
+            document.getElementById('adminPinError').textContent = '';
+            document.getElementById('adminPinInput').value = '';
+            const attempts = getAdminAttempts();
+            const now = Date.now();
+            if (attempts.lockedUntil && now < attempts.lockedUntil) {
+                const secsLeft = Math.ceil((attempts.lockedUntil - now) / 1000);
+                document.getElementById('adminLockText').textContent = `Too many wrong attempts. Try again in ${secsLeft}s.`;
+            } else {
+                document.getElementById('adminLockText').textContent = 'Enter the admin PIN to continue.';
+            }
+            if (adminUnlocked) {
+                showAdminContent();
+            } else {
+                document.getElementById('adminLockScreen').style.display = 'block';
+                document.getElementById('adminContent').style.display = 'none';
+            }
+            document.getElementById('adminModal').style.display = 'flex';
+        }
+        function closeAdminModal() {
+            document.getElementById('adminModal').style.display = 'none';
+        }
+        async function submitAdminPin() {
+            const attempts = getAdminAttempts();
+            const now = Date.now();
+            if (attempts.lockedUntil && now < attempts.lockedUntil) {
+                const secsLeft = Math.ceil((attempts.lockedUntil - now) / 1000);
+                document.getElementById('adminPinError').textContent = `Locked out. Try again in ${secsLeft}s.`;
+                return;
+            }
+            const entered = document.getElementById('adminPinInput').value;
+            const enteredHash = await sha256Hex(entered);
+            const storedHash = localStorage.getItem(LS_ADMIN_PIN_HASH);
+            if (enteredHash === storedHash) {
+                saveAdminAttempts({ count: 0, lockedUntil: 0 });
+                adminUnlocked = true;
+                showAdminContent();
+                if (entered === DEFAULT_ADMIN_PIN) {
+                    alert('You are using the default admin PIN. Please change it now: Settings tab -> "Change Admin PIN".');
+                }
+            } else {
+                const newCount = (attempts.count || 0) + 1;
+                let lockedUntil = 0;
+                if (newCount >= 5) {
+                    lockedUntil = now + 60000;
+                    document.getElementById('adminPinError').textContent = 'Too many wrong attempts. Locked for 60s.';
+                } else {
+                    document.getElementById('adminPinError').textContent = `Incorrect PIN. (${newCount}/5 attempts)`;
+                }
+                saveAdminAttempts({ count: lockedUntil ? 0 : newCount, lockedUntil });
+            }
+        }
+        async function changeAdminPin() {
+            const current = prompt('Enter your current admin PIN to confirm:');
+            if (current === null) return;
+            const currentHash = await sha256Hex(current);
+            if (currentHash !== localStorage.getItem(LS_ADMIN_PIN_HASH)) {
+                alert('Current PIN is incorrect. PIN not changed.');
+                return;
+            }
+            const next = prompt('Enter a new admin PIN:');
+            if (next === null) return;
+            if (!next.trim()) { alert('PIN cannot be empty.'); return; }
+            localStorage.setItem(LS_ADMIN_PIN_HASH, await sha256Hex(next));
+            alert('Admin PIN updated.');
+        }
+        function showAdminContent() {
+            document.getElementById('adminLockScreen').style.display = 'none';
+            document.getElementById('adminContent').style.display = 'block';
+            const settings = getRateLimitSettings();
+            document.getElementById('rateLimitCount').value = settings.maxSends;
+            document.getElementById('rateLimitWindow').value = settings.windowSeconds;
+            document.getElementById('autoBanThreshold').value = settings.autoBanThreshold;
+            document.getElementById('autoBanEnabled').checked = settings.autoBanEnabled;
+            document.getElementById('rateLimitNote').textContent = `${settings.maxSends} per ${settings.windowSeconds}s`;
+            renderBanList();
+            renderSpamLog();
+        }
+        function switchAdminTab(tab) {
+            ['bans', 'log', 'settings'].forEach(t => {
+                document.getElementById('pane' + t.charAt(0).toUpperCase() + t.slice(1)).classList.toggle('active', t === tab);
+                document.getElementById('tabBtn' + t.charAt(0).toUpperCase() + t.slice(1)).classList.toggle('active', t === tab);
+            });
+        }
+
+        function addBanFromInput() {
+            const input = document.getElementById('newBanName');
+            if (!input.value.trim()) return;
+            banName(input.value, 'Manually banned by admin');
+            input.value = '';
+            renderBanList();
+        }
+
+        function renderBanList() {
+            const container = document.getElementById('banListContainer');
+            const bans = getBans();
+            container.innerHTML = '';
+            if (bans.length === 0) {
+                container.innerHTML = '<div class="empty-note">No banned names.</div>';
+                return;
+            }
+            bans.forEach(b => {
+                const row = document.createElement('div');
+                row.className = 'list-row';
+                const left = document.createElement('div');
+                left.innerHTML = `<strong>${escapeHtml(b.name)}</strong><br><span class="meta">${escapeHtml(b.reason)} · ${escapeHtml(b.date)}</span>`;
+                const unbanBtn = document.createElement('button');
+                unbanBtn.className = 'btn-secondary';
+                unbanBtn.textContent = 'Unban';
+                unbanBtn.onclick = () => unbanName(b.name);
+                row.appendChild(left);
+                row.appendChild(unbanBtn);
+                container.appendChild(row);
+            });
+        }
+
+        function renderSpamLog() {
+            const container = document.getElementById('spamLogContainer');
+            const log = getSpamLog().slice().reverse();
+            container.innerHTML = '';
+            if (log.length === 0) {
+                container.innerHTML = '<div class="empty-note">No spam events logged yet.</div>';
+                return;
+            }
+            log.forEach(e => {
+                const row = document.createElement('div');
+                row.className = 'list-row';
+                row.innerHTML = `<div><strong>${escapeHtml(e.name)}</strong> <span class="pill-danger">flagged</span><br><span class="meta">${escapeHtml(e.detail)} · ${escapeHtml(e.date)}</span></div>`;
+                container.appendChild(row);
+            });
+        }
 
         function initTemplates() {
             const container = document.getElementById('templateButtonsContainer');
@@ -576,12 +1127,17 @@
             const now = new Date();
             now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
             document.getElementById('tsPicker').value = now.toISOString().slice(0, 16);
+            const rl = getRateLimitSettings();
+            document.getElementById('rateLimitNote').textContent = `${rl.maxSends} per ${rl.windowSeconds}s`;
             loadFromLocalStorage();
+            const savedName = document.getElementById('senderName').value.trim();
+            if (savedName && isBanned(savedName)) document.getElementById('bannedBanner').style.display = 'block';
         }
 
         function autoSave() {
             const state = {
                 webhook: document.getElementById('webhookURL').value,
+                senderName: document.getElementById('senderName').value,
                 title: document.getElementById('embedTitle').value,
                 url: document.getElementById('embedURL').value,
                 desc: document.getElementById('embedDescription').value,
@@ -592,6 +1148,7 @@
                 image: document.getElementById('imageURL').value,
                 footer: document.getElementById('footerText').value,
                 footerIcon: document.getElementById('footerIcon').value,
+                includeTimestamp: document.getElementById('includeTimestamp').checked,
                 fields: fields
             };
             localStorage.setItem('embed_studio_state', JSON.stringify(state));
@@ -603,6 +1160,7 @@
             try {
                 const data = JSON.parse(saved);
                 document.getElementById('webhookURL').value = data.webhook || '';
+                document.getElementById('senderName').value = data.senderName || '';
                 document.getElementById('embedTitle').value = data.title || '';
                 document.getElementById('embedURL').value = data.url || '';
                 document.getElementById('embedDescription').value = data.desc || '';
@@ -614,8 +1172,10 @@
                 document.getElementById('imageURL').value = data.image || '';
                 document.getElementById('footerText').value = data.footer || '';
                 document.getElementById('footerIcon').value = data.footerIcon || '';
+                document.getElementById('includeTimestamp').checked = !!data.includeTimestamp;
                 fields = data.fields || [];
                 renderFieldsForm();
+                onWebhookInput();
                 updatePreview();
             } catch(e) { console.error(e); }
         }
@@ -636,33 +1196,75 @@
             if (!link) return;
             const qrApiUrl = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(link)}`;
             document.getElementById('imageURL').value = qrApiUrl;
-            autoSave();
             updatePreview();
-            alert("QR Code banner image automatically added to your embed!");
+            alert("QR Code banner image added as the main image!");
+        }
+
+        function isValidWebhookURL(url) {
+            return /^https:\/\/(discord\.com|discordapp\.com)\/api\/webhooks\/\d+\/[\w-]+\/?$/.test(url.trim());
+        }
+
+        function onWebhookInput() {
+            autoSave();
+            const url = document.getElementById('webhookURL').value.trim();
+            const statusEl = document.getElementById('webhookStatus');
+            const input = document.getElementById('webhookURL');
+            const sendBtn = document.getElementById('sendBtn');
+            if (!url) {
+                statusEl.textContent = '';
+                statusEl.className = 'webhook-status';
+                input.classList.remove('invalid');
+                sendBtn.disabled = false;
+                return;
+            }
+            if (isValidWebhookURL(url)) {
+                statusEl.textContent = '✓ Looks like a valid Discord webhook URL';
+                statusEl.className = 'webhook-status ok';
+                input.classList.remove('invalid');
+                sendBtn.disabled = false;
+            } else {
+                statusEl.textContent = '⚠ This doesn\'t look like a Discord webhook URL';
+                statusEl.className = 'webhook-status warn';
+                input.classList.add('invalid');
+                sendBtn.disabled = false;
+            }
         }
 
         function testWebhookConnection() {
             const url = document.getElementById('webhookURL').value.trim();
+            const statusEl = document.getElementById('webhookStatus');
             if (!url) {
                 alert("Please provide a Webhook URL first.");
                 return;
             }
+            if (!isValidWebhookURL(url)) {
+                alert("That doesn't look like a valid Discord webhook URL. Expected format:\nhttps://discord.com/api/webhooks/{id}/{token}");
+                return;
+            }
             fetch(url, { method: 'GET' })
                 .then(res => {
-                    if (res.ok || res.status === 405) {
+                    if (res.ok) {
+                        statusEl.textContent = '✓ Webhook reachable and valid';
+                        statusEl.className = 'webhook-status ok';
                         alert("Success! Webhook endpoint is valid and reachable.");
+                    } else if (res.status === 404) {
+                        statusEl.textContent = '✗ Webhook not found (404) — check the URL';
+                        statusEl.className = 'webhook-status err';
+                        alert("Webhook not found. Double check the URL was copied correctly and the webhook hasn't been deleted.");
                     } else {
+                        statusEl.textContent = `⚠ Endpoint returned status ${res.status}`;
+                        statusEl.className = 'webhook-status warn';
                         alert("Warning: Webhook endpoint returned status code " + res.status);
                     }
                 })
-                .catch(() => alert("Connection test complete or CORS restricted, try sending a test payload!"));
+                .catch(() => alert("Couldn't confirm the endpoint from the browser (this can happen due to CORS) — try sending a real embed to be sure."));
         }
 
         // Feedback System Functions
         function openFeedbackBox() {
             const fb = prompt("What feature or feedback would you like to share?");
             if (!fb || fb.trim() === "") return;
-            
+
             let feedbackList = JSON.parse(localStorage.getItem('embed_studio_feedback') || '[]');
             feedbackList.push({ text: fb, date: new Date().toLocaleString() });
             localStorage.setItem('embed_studio_feedback', JSON.stringify(feedbackList));
@@ -673,17 +1275,24 @@
             const container = document.getElementById('feedbackListContainer');
             container.innerHTML = '';
             let feedbackList = JSON.parse(localStorage.getItem('embed_studio_feedback') || '[]');
-            
+
             if (feedbackList.length === 0) {
                 container.innerHTML = '<p style="color: var(--text-muted); text-align: center; margin: 20px 0;">No feedback submitted yet.</p>';
             } else {
-                feedbackList.reverse().forEach((item, index) => {
+                feedbackList.slice().reverse().forEach((item) => {
                     const box = document.createElement('div');
                     box.style.background = '#f8fafc';
                     box.style.border = '1px solid var(--border)';
                     box.style.padding = '10px';
                     box.style.borderRadius = '6px';
-                    box.innerHTML = `<div style="font-size: 0.75rem; color: var(--text-muted); margin-bottom: 4px;">${item.date}</div><div style="font-size: 0.85rem; color: var(--text-main);">${item.text}</div>`;
+                    const dateDiv = document.createElement('div');
+                    dateDiv.style.cssText = 'font-size:0.75rem;color:var(--text-muted);margin-bottom:4px;';
+                    dateDiv.textContent = item.date;
+                    const textDiv = document.createElement('div');
+                    textDiv.style.cssText = 'font-size:0.85rem;color:var(--text-main);';
+                    textDiv.textContent = item.text;
+                    box.appendChild(dateDiv);
+                    box.appendChild(textDiv);
                     container.appendChild(box);
                 });
             }
@@ -699,6 +1308,57 @@
                 localStorage.removeItem('embed_studio_feedback');
                 openFeedbackModal();
             }
+        }
+
+        // Import modal
+        function openImportModal() {
+            document.getElementById('importError').textContent = '';
+            document.getElementById('importTextarea').value = '';
+            document.getElementById('importModal').style.display = 'flex';
+        }
+        function closeImportModal() {
+            document.getElementById('importModal').style.display = 'none';
+        }
+        function importJSON() {
+            const raw = document.getElementById('importTextarea').value.trim();
+            const errEl = document.getElementById('importError');
+            errEl.textContent = '';
+            if (!raw) { errEl.textContent = 'Paste some JSON first.'; return; }
+            let parsed;
+            try {
+                parsed = JSON.parse(raw);
+            } catch (e) {
+                errEl.textContent = 'Invalid JSON: ' + e.message;
+                return;
+            }
+            const embed = (parsed.embeds && parsed.embeds[0]) ? parsed.embeds[0] : parsed;
+            if (!embed || typeof embed !== 'object') {
+                errEl.textContent = 'Could not find an embed object in this JSON.';
+                return;
+            }
+            document.getElementById('embedTitle').value = embed.title || '';
+            document.getElementById('embedURL').value = embed.url || '';
+            document.getElementById('embedDescription').value = embed.description || '';
+            if (typeof embed.color === 'number') {
+                const hex = '#' + embed.color.toString(16).padStart(6, '0');
+                document.getElementById('embedColorHex').value = hex;
+                document.getElementById('embedColorPicker').value = hex;
+            }
+            if (embed.author) {
+                document.getElementById('authorName').value = embed.author.name || '';
+                document.getElementById('authorIcon').value = embed.author.icon_url || '';
+            }
+            if (embed.thumbnail) document.getElementById('thumbnailURL').value = embed.thumbnail.url || '';
+            if (embed.image) document.getElementById('imageURL').value = embed.image.url || '';
+            if (embed.footer) {
+                document.getElementById('footerText').value = embed.footer.text || '';
+                document.getElementById('footerIcon').value = embed.footer.icon_url || '';
+            }
+            document.getElementById('includeTimestamp').checked = !!embed.timestamp;
+            fields = Array.isArray(embed.fields) ? embed.fields.map(f => ({ name: f.name || '', value: f.value || '', inline: !!f.inline })) : [];
+            renderFieldsForm();
+            updatePreview();
+            closeImportModal();
         }
 
         function parseDiscordTags(text) {
@@ -754,17 +1414,73 @@
             fields.forEach((field, index) => {
                 const box = document.createElement('div');
                 box.className = 'field-box';
-                box.innerHTML = `
-                    <label>Name:</label>
-                    <input type="text" value="${field.name}" oninput="fields[${index}].name = this.value; updatePreview()">
-                    <label>Value:</label>
-                    <textarea oninput="fields[${index}].value = this.value; updatePreview()">${field.value}</textarea>
-                    <label style="display:flex; gap:6px; margin-top:6px;"><input type="checkbox" ${field.inline ? 'checked' : ''} onchange="fields[${index}].inline = this.checked; updatePreview()"> Inline</label>
-                    <button class="btn-danger" onclick="removeField(${index})">Delete</button>
-                `;
+                box.draggable = true;
+                box.dataset.index = index;
+
+                box.addEventListener('dragstart', () => { dragSrcIndex = index; box.classList.add('dragging'); });
+                box.addEventListener('dragend', () => box.classList.remove('dragging'));
+                box.addEventListener('dragover', (e) => e.preventDefault());
+                box.addEventListener('drop', (e) => {
+                    e.preventDefault();
+                    if (dragSrcIndex === null || dragSrcIndex === index) return;
+                    const moved = fields.splice(dragSrcIndex, 1)[0];
+                    fields.splice(index, 0, moved);
+                    dragSrcIndex = null;
+                    renderFieldsForm();
+                    updatePreview();
+                });
+
+                const header = document.createElement('div');
+                header.className = 'field-box-header';
+                header.innerHTML = `<span class="drag-handle">⠿ Field ${index + 1}</span>`;
+                const delBtn = document.createElement('button');
+                delBtn.className = 'btn-danger';
+                delBtn.textContent = 'Delete';
+                delBtn.style.marginTop = '0';
+                delBtn.onclick = () => removeField(index);
+                header.appendChild(delBtn);
+                box.appendChild(header);
+
+                const nameLabel = document.createElement('label');
+                nameLabel.textContent = 'Name:';
+                const nameInput = document.createElement('input');
+                nameInput.type = 'text';
+                nameInput.maxLength = 256;
+                nameInput.value = field.name;
+                nameInput.oninput = () => { fields[index].name = nameInput.value; updatePreview(); };
+
+                const valueLabel = document.createElement('label');
+                valueLabel.textContent = 'Value:';
+                const valueInput = document.createElement('textarea');
+                valueInput.maxLength = 1024;
+                valueInput.value = field.value;
+                valueInput.oninput = () => { fields[index].value = valueInput.value; updatePreview(); };
+
+                const inlineLabel = document.createElement('label');
+                inlineLabel.style.cssText = 'display:flex; gap:6px; margin-top:6px; align-items:center;';
+                const inlineCheckbox = document.createElement('input');
+                inlineCheckbox.type = 'checkbox';
+                inlineCheckbox.style.width = 'auto';
+                inlineCheckbox.checked = field.inline;
+                inlineCheckbox.onchange = () => { fields[index].inline = inlineCheckbox.checked; updatePreview(); };
+                inlineLabel.appendChild(inlineCheckbox);
+                inlineLabel.appendChild(document.createTextNode(' Inline'));
+
+                box.appendChild(nameLabel);
+                box.appendChild(nameInput);
+                box.appendChild(valueLabel);
+                box.appendChild(valueInput);
+                box.appendChild(inlineLabel);
                 container.appendChild(box);
             });
             autoSave();
+        }
+
+        function setCharCount(id, len, max) {
+            const el = document.getElementById(id);
+            if (!el) return;
+            el.textContent = `${len}/${max}`;
+            el.className = 'char-count' + (len > max ? ' err' : (len > max * 0.9 ? ' warn' : ''));
         }
 
         function updatePreview() {
@@ -783,16 +1499,16 @@
             document.getElementById('prevColorPill').style.backgroundColor = hexColor || '#5865F2';
 
             const prevTitle = document.getElementById('prevTitle');
-            if (title) { prevTitle.innerText = parseDiscordTags(title); prevTitle.style.display = 'block'; prevTitle.href = url || '#'; }
+            if (title) { prevTitle.textContent = parseDiscordTags(title); prevTitle.style.display = 'block'; prevTitle.href = url || '#'; }
             else { prevTitle.style.display = 'none'; }
 
             const prevDesc = document.getElementById('prevDescription');
-            if (description) { prevDesc.innerText = parseDiscordTags(description); prevDesc.style.display = 'block'; }
+            if (description) { prevDesc.textContent = parseDiscordTags(description); prevDesc.style.display = 'block'; }
             else { prevDesc.style.display = 'none'; }
 
             const prevAuthorContainer = document.getElementById('prevAuthorContainer');
             if (authorName) {
-                document.getElementById('prevAuthorText').innerText = parseDiscordTags(authorName);
+                document.getElementById('prevAuthorText').textContent = parseDiscordTags(authorName);
                 prevAuthorContainer.style.display = 'flex';
                 document.getElementById('prevAuthorIcon').style.display = authorIcon ? 'block' : 'none';
                 if (authorIcon) document.getElementById('prevAuthorIcon').src = authorIcon;
@@ -804,11 +1520,20 @@
 
             const prevFieldsGrid = document.getElementById('prevFieldsGrid');
             prevFieldsGrid.innerHTML = '';
+            let fieldsCharTotal = 0;
             fields.forEach(f => {
+                fieldsCharTotal += (f.name || '').length + (f.value || '').length;
                 if (f.name || f.value) {
                     const fDiv = document.createElement('div');
                     fDiv.className = `discord-field ${f.inline ? 'inline' : ''}`;
-                    fDiv.innerHTML = `<div class="discord-field-name">${parseDiscordTags(f.name)}</div><div class="discord-field-value">${parseDiscordTags(f.value)}</div>`;
+                    const nameDiv = document.createElement('div');
+                    nameDiv.className = 'discord-field-name';
+                    nameDiv.textContent = parseDiscordTags(f.name);
+                    const valDiv = document.createElement('div');
+                    valDiv.className = 'discord-field-value';
+                    valDiv.textContent = parseDiscordTags(f.value);
+                    fDiv.appendChild(nameDiv);
+                    fDiv.appendChild(valDiv);
                     prevFieldsGrid.appendChild(fDiv);
                 }
             });
@@ -819,11 +1544,20 @@
 
             const prevFooterContainer = document.getElementById('prevFooterContainer');
             if (footerText) {
-                document.getElementById('prevFooterText').innerText = parseDiscordTags(footerText);
+                document.getElementById('prevFooterText').textContent = parseDiscordTags(footerText);
                 prevFooterContainer.style.display = 'flex';
                 document.getElementById('prevFooterIcon').style.display = footerIcon ? 'block' : 'none';
                 if (footerIcon) document.getElementById('prevFooterIcon').src = footerIcon;
             } else { prevFooterContainer.style.display = 'none'; }
+
+            // Character counters (Discord's real embed limits)
+            setCharCount('cc-title', title.length, 256);
+            setCharCount('cc-desc', description.length, 4096);
+            setCharCount('cc-author', authorName.length, 256);
+            setCharCount('cc-footer', footerText.length, 2048);
+            const total = title.length + description.length + authorName.length + footerText.length + fieldsCharTotal;
+            setCharCount('cc-total', total, 6000);
+            document.getElementById('cc-total').textContent = `Total: ${total}/6000`;
         }
 
         function buildPayloadObject() {
@@ -839,16 +1573,17 @@
             const imageURL = document.getElementById('imageURL').value;
             const footerText = document.getElementById('footerText').value;
             const footerIcon = document.getElementById('footerIcon').value;
+            const includeTimestamp = document.getElementById('includeTimestamp').checked;
 
             if (title) embed.title = title;
             if (url) embed.url = url;
             if (description) embed.description = description;
-            if (authorName) embed.author = { name: authorName, icon_url: authorIcon };
+            if (authorName) embed.author = { name: authorName, icon_url: authorIcon || undefined };
             if (thumbnailURL) embed.thumbnail = { url: thumbnailURL };
             if (imageURL) embed.image = { url: imageURL };
             if (fields.length > 0) embed.fields = fields;
-            if (footerText) embed.footer = { text: footerText, icon_url: footerIcon };
-            embed.timestamp = new Date().toISOString();
+            if (footerText) embed.footer = { text: footerText, icon_url: footerIcon || undefined };
+            if (includeTimestamp) embed.timestamp = new Date().toISOString();
             return { embeds: [embed] };
         }
 
@@ -859,6 +1594,7 @@
 
         function loadPreset(type) {
             if (type === 'clear') {
+                if (!confirm('Clear everything, including the saved webhook URL?')) return;
                 localStorage.removeItem('embed_studio_state');
                 location.reload();
             } else if (templates[type]) {
@@ -873,15 +1609,27 @@
 
         function sendToDiscord() {
             const webhookURL = document.getElementById('webhookURL').value.trim();
-            if (!webhookURL) { alert('Enter Webhook URL first!'); return; }
+            if (!webhookURL) { alert('Enter a Webhook URL in Connection Settings first!'); return; }
+            if (!isValidWebhookURL(webhookURL)) {
+                if (!confirm("This doesn't look like a standard Discord webhook URL. Send anyway?")) return;
+            }
+            const gate = checkSenderBeforeSend();
+            if (!gate.ok) return;
+            const sendBtn = document.getElementById('sendBtn');
+            sendBtn.disabled = true;
+            sendBtn.textContent = 'Sending...';
             fetch(webhookURL, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(buildPayloadObject())
             }).then(res => {
                 if (res.ok) alert('Embed sent successfully!');
-                else alert('Failed to send payload.');
-            }).catch(() => alert('Network error.'));
+                else alert('Failed to send payload (status ' + res.status + ').');
+            }).catch(() => alert('Network error.'))
+              .finally(() => {
+                sendBtn.disabled = false;
+                sendBtn.textContent = '🚀 Send Embed to Discord';
+              });
         }
 
         initTemplates();
